@@ -1,0 +1,318 @@
+@baseUrl = http://localhost:5000/api
+@contentType = application/json
+
+### Health Check
+GET {{baseUrl}}/health
+
+
+
+### Register
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+    "username": "newuser",
+    "email": "new@example.com",
+    "password": "newpassword"
+}
+
+### 1. AUTHENTICATION
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+    "email": "new@example.com",
+    "password": "newpassword"
+}
+
+### Check Auth Status
+GET {{baseUrl}}/auth/check
+
+### Logout
+POST {{baseUrl}}/auth/logout
+
+###############################################################################
+
+### 2. USUARIOS
+### Get all users
+GET {{baseUrl}}/usuarios/
+
+### Get user by ID
+GET {{baseUrl}}/usuarios/2
+
+### Create user
+POST {{baseUrl}}/usuarios/
+Content-Type: {{contentType}}
+
+{
+    "username": "testuser",
+    "email": "test@example.com",
+    "password": "testpassword"
+}
+
+### Update user
+PUT {{baseUrl}}/usuarios/3
+Content-Type: {{contentType}}
+
+{
+    "username": "updated_user",
+    "email": "updated@example.com"
+}
+
+### Delete user
+DELETE {{baseUrl}}/usuarios/3
+
+###############################################################################
+
+### 3. ROLES
+### Get all roles
+GET {{baseUrl}}/roles/
+
+### Get role by ID
+GET {{baseUrl}}/roles/1
+
+### Create role
+POST {{baseUrl}}/roles/
+Content-Type: {{contentType}}
+
+{
+    "nombre": "Admin",
+    "descripcion": "Administrador del sistema"
+}
+
+### Update role
+PUT {{baseUrl}}/roles/1
+Content-Type: {{contentType}}
+
+{
+    "descripcion": "Administrador con permisos totales"
+}
+
+### Delete role
+DELETE {{baseUrl}}/roles/1
+
+###############################################################################
+
+### 4. AREAS
+### Get all areas
+GET {{baseUrl}}/areas/
+
+### Get area by ID
+GET {{baseUrl}}/areas/1
+
+### Create area
+POST {{baseUrl}}/areas/
+Content-Type: {{contentType}}
+
+{
+    "nombre": "Música",
+    "descripcion": "Departamento de alabanza"
+}
+
+### Update area
+PUT {{baseUrl}}/areas/1
+Content-Type: {{contentType}}
+
+{
+    "descripcion": "Departamento de alabanza y coro"
+}
+
+### Delete area
+DELETE {{baseUrl}}/areas/1
+
+###############################################################################
+
+### 5. EVENTOS
+### Get all eventos
+GET {{baseUrl}}/eventos/
+
+### Get evento by ID
+GET {{baseUrl}}/eventos/1
+
+### Create evento
+POST {{baseUrl}}/eventos/
+Content-Type: {{contentType}}
+
+{
+    "titulo": "Culto Dominical",
+    "descripcion": "Reunión semanal",
+    "fecha_inicio": "2024-03-24T10:00:00",
+    "fecha_fin": "2024-03-24T12:00:00",
+    "id_area": 1,
+    "aforo_max": 100
+}
+
+### Update evento
+PUT {{baseUrl}}/eventos/1
+Content-Type: {{contentType}}
+
+{
+    "titulo": "Culto Dominical Especial",
+    "aforo_max": 150
+}
+
+### Delete evento
+DELETE {{baseUrl}}/eventos/1
+
+###############################################################################
+
+### 6. RESERVAS
+### Get all reservas
+GET {{baseUrl}}/reservas/
+
+### Get reserva by ID
+GET {{baseUrl}}/reservas/1
+
+### Create reserva
+POST {{baseUrl}}/reservas/
+Content-Type: {{contentType}}
+
+{
+    "id_user": 1,
+    "id_evento": 1
+}
+
+### Update reserva (Confirmar/Cancelar)
+PUT {{baseUrl}}/reservas/1
+Content-Type: {{contentType}}
+
+{
+    "estado": 2
+}
+
+### Delete reserva
+DELETE {{baseUrl}}/reservas/1
+
+###############################################################################
+
+### 7. BLOGS
+### Get all blogs
+GET {{baseUrl}}/blogs/
+
+### Get blog post by ID
+GET {{baseUrl}}/blogs/1
+
+### Create blog post
+POST {{baseUrl}}/blogs/
+Content-Type: {{contentType}}
+
+{
+    "id_user": 1,
+    "titulo": "Mi primer post",
+    "contenido": "Contenido del blog...",
+    "estado": 1
+}
+
+### Update blog post
+PUT {{baseUrl}}/blogs/1
+Content-Type: {{contentType}}
+
+{
+    "titulo": "Mi post actualizado",
+    "contenido": "Nuevo contenido revisado"
+}
+
+### Delete blog post
+DELETE {{baseUrl}}/blogs/1
+
+###############################################################################
+
+### 8. COMENTARIOS
+### Get all comentarios
+GET {{baseUrl}}/comentarios/
+
+### Get comentarios for a specific blog (Query param)
+GET {{baseUrl}}/comentarios/?blog_id=1
+
+### Get single comentario
+GET {{baseUrl}}/comentarios/1
+
+### Create comentario
+POST {{baseUrl}}/comentarios/
+Content-Type: {{contentType}}
+
+{
+    "id_user": 1,
+    "id_blog": 1,
+    "contenido": "Excelente post!"
+}
+
+### Delete comentario
+DELETE {{baseUrl}}/comentarios/1
+
+###############################################################################
+
+### 9. ORACIONES
+### Get all oraciones
+GET {{baseUrl}}/oraciones/
+
+### Get oracion by ID
+GET {{baseUrl}}/oraciones/1
+
+### Create oracion
+POST {{baseUrl}}/oraciones/
+Content-Type: {{contentType}}
+
+{
+    "id_user": 1,
+    "titulo": "Petición de salud",
+    "contenido": "Pido oración por mi familia",
+    "duracion_dias": 7
+}
+
+### Update oracion
+PUT {{baseUrl}}/oraciones/1
+Content-Type: {{contentType}}
+
+{
+    "estado": 2
+}
+
+### Delete oracion
+DELETE {{baseUrl}}/oraciones/1
+
+###############################################################################
+
+### 10. PUESTOS
+### Get all puestos
+GET {{baseUrl}}/puestos/
+
+### Get puesto by ID
+GET {{baseUrl}}/puestos/1
+
+### Create puesto
+POST {{baseUrl}}/puestos/
+Content-Type: {{contentType}}
+
+{
+    "id_user": 1,
+    "id_area": 1,
+    "id_rol": 1,
+    "requiere_confirmacion": false
+}
+
+### Update puesto
+PUT {{baseUrl}}/puestos/1
+Content-Type: {{contentType}}
+
+{
+    "estado": 2
+}
+
+### Delete puesto
+DELETE {{baseUrl}}/puestos/1
+
+###############################################################################
+
+### 11. TAGS
+### Get all tags
+GET {{baseUrl}}/tags/
+
+### Create tag
+POST {{baseUrl}}/tags/
+Content-Type: {{contentType}}
+
+{
+    "nombre": "Importante"
+}
