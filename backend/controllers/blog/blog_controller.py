@@ -19,9 +19,14 @@ def get_blog(id):
 @blog_bp.route('/', methods=['POST'])
 def create_blog():
     data = request.get_json()
+    user_id = data.get('id_user')
+    
+    if not check_permission(user_id):
+        return jsonify({'status': 'error', 'message': 'No tienes permiso para crear este recurso para este usuario'}), 403
+        
     try:
         new_blog = Blog(
-            id_user=data['id_user'],
+            id_user=user_id,
             titulo=data['titulo'],
             contenido=data['contenido'],
             estado=data.get('estado', 1)

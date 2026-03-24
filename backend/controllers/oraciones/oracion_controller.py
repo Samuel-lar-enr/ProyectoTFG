@@ -19,9 +19,14 @@ def get_oracion(id):
 @oracion_bp.route('/', methods=['POST'])
 def create_oracion():
     data = request.get_json()
+    user_id = data.get('id_user')
+
+    if not check_permission(user_id):
+        return jsonify({'status': 'error', 'message': 'No tienes permiso para crear este recurso para este usuario'}), 403
+
     try:
         new_oracion = Oracion(
-            id_user=data['id_user'],
+            id_user=user_id,
             titulo=data['titulo'],
             contenido=data['contenido'],
             duracion_dias=data.get('duracion_dias'),

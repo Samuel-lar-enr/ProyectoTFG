@@ -110,6 +110,16 @@ Mejorar la web de la iglesia haciéndola funcional, intuitiva y fácil de gestio
 - id_blog
 - id_reaccion
 
+**Comentario**
+- id
+- id_user
+- id_blog
+- id_padre (autorreferencia para respuestas)
+- contenido
+- imagen (opcional)
+- fecha_creacion
+- fecha_actualizacion
+- estado
 
 ### Funcionalidades
 

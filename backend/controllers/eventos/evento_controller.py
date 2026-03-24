@@ -20,12 +20,18 @@ def get_evento(id):
 @evento_bp.route('/', methods=['POST'])
 def create_evento():
     data = request.get_json()
+    user_id = data.get('id_user')
+    
+    if not check_permission(user_id):
+        return jsonify({'status': 'error', 'message': 'No tienes permiso para crear este recurso para este usuario'}), 403
+        
     try:
         new_evento = Evento(
             titulo=data['titulo'],
             descripcion=data.get('descripcion'),
             fecha_inicio=datetime.fromisoformat(data['fecha_inicio']),
             id_area=data['id_area'],
+            id_user=user_id,
             fecha_fin=datetime.fromisoformat(data['fecha_fin']) if data.get('fecha_fin') else None,
             aforo_max=data.get('aforo_max'),
             estado=data.get('estado', 1)
@@ -40,7 +46,7 @@ def create_evento():
 @evento_bp.route('/<int:id>', methods=['PUT', 'PATCH'])
 def update_evento(id):
     evento = Evento.query.get_or_404(id)
-    if not check_permission():
+    if not check_permission(evento.id_user):
         return jsonify({'status': 'error', 'message': 'No tienes permiso para editar este recurso'}), 403
     
     data = request.get_json()
@@ -71,7 +77,7 @@ def update_evento(id):
 def delete_evento(id):
     evento = Evento.query.get_or_404(id)
     
-    if not check_permission():
+    if not check_permission(evento.id_user):
         return jsonify({'status': 'error', 'message': 'No tienes permiso para eliminar este recurso'}), 403
     
     try:

@@ -1,18 +1,23 @@
 import os
+import time
+from dotenv import load_dotenv
 from flask import Flask, jsonify, request, url_for
 from flask_cors import CORS
 from flask_login import LoginManager
 from models import db, Usuario
 from controllers import register_blueprints
 
+# Cargar variables de entorno desde el .env de la raíz
+load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
+
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
-# Configuración de la base de datos
-db_url = os.getenv('DB_URL', 'mysql+pymysql://root:@localhost:3306/iglesia_db')
+# Configuración de la base de datos (Prioriza variable de entorno DB_URL)
+db_url = os.getenv('DB_URL', 'mysql+pymysql://admin:admin123@localhost:3306/iglesia_db')
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'dev-secret-key'
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
 
 # Inicializar DB
 db.init_app(app)
@@ -29,13 +34,22 @@ def load_user(user_id):
 # Registrar rutas de la API
 register_blueprints(app)
 
-# Crear las tablas al iniciar
+# Reintentos para crear las tablas al iniciar (útil para Docker)
 with app.app_context():
-    try:
-        db.create_all()
-        print("Base de datos inicializada correctamente.")
-    except Exception as e:
-        print(f"Error al inicializar la base de datos: {e}")
+    retries = 10
+    success = False
+    while retries > 0 and not success:
+        try:
+            db.create_all()
+            print("Base de datos conectada e inicializada correctamente.")
+            success = True
+        except Exception as e:
+            retries -= 1
+            print(f"Esperando a la base de datos... ({retries} reintentos restantes)")
+            time.sleep(5)
+    
+    if not success:
+        print("Error crítico: No se ha podido conectar con la base de datos tras varios intentos.")
 
 @app.route('/')
 def index():
