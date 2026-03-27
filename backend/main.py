@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, request, url_for
 from flask_cors import CORS
 from flask_login import LoginManager
+from flask_migrate import Migrate
+from flask_mailman import Mail
 from models import db, Usuario
 from controllers import register_blueprints
 
@@ -16,11 +18,20 @@ CORS(app, supports_credentials=True)
 # Configuración de la base de datos (Prioriza variable de entorno DB_URL)
 db_url = os.getenv('DB_URL', 'mysql+pymysql://admin:admin123@localhost:3306/iglesia_db')
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
 
-# Inicializar DB
+# Configuración de Email
+app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
+app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
+app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'True').lower() == 'true'
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER')
+
+# Inicializar DB y Migraciones
 db.init_app(app)
+migrate = Migrate(app, db)
+mail = Mail(app)
 
 # Login Manager
 login_manager = LoginManager()
@@ -33,23 +44,6 @@ def load_user(user_id):
 
 # Registrar rutas de la API
 register_blueprints(app)
-
-# Reintentos para crear las tablas al iniciar (útil para Docker)
-with app.app_context():
-    retries = 10
-    success = False
-    while retries > 0 and not success:
-        try:
-            db.create_all()
-            print("Base de datos conectada e inicializada correctamente.")
-            success = True
-        except Exception as e:
-            retries -= 1
-            print(f"Esperando a la base de datos... ({retries} reintentos restantes)")
-            time.sleep(5)
-    
-    if not success:
-        print("Error crítico: No se ha podido conectar con la base de datos tras varios intentos.")
 
 @app.route('/')
 def index():
@@ -171,6 +165,23 @@ def health_check():
     return jsonify({'status': 'success', 'message': 'API is running'}), 200
 
 if __name__ == '__main__':
+    # Reintentos para crear las tablas al iniciar (útil para Docker)
+    with app.app_context():
+        retries = 10
+        success = False
+        while retries > 0 and not success:
+            try:
+                db.create_all()
+                print("Base de datos conectada e inicializada correctamente.")
+                success = True
+            except Exception as e:
+                retries -= 1
+                print(f"Esperando a la base de datos... ({retries} reintentos restantes)")
+                time.sleep(5)
+        
+        if not success:
+            print("Error crítico: No se ha podido conectar con la base de datos tras varios intentos.")
+    
     app.run(debug=True, port=5000)
 
 

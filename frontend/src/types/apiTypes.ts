@@ -8,6 +8,7 @@ export interface User {
   email: string;
   estado: number;
   avatar?: string;
+  notificaciones: boolean;
   fecha_creacion: string;
   roles: string[];
 }
@@ -123,6 +124,7 @@ export interface RegisterRequest {
   username: string;
   email: string;
   password: string;
+  notificaciones?: boolean;
 }
 
 export interface PostBlogRequest {

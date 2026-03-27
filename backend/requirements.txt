@@ -5,3 +5,5 @@ flask-login
 pymysql
 cryptography
 python-dotenv
+flask-migrate
+flask-mailman

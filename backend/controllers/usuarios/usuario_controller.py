@@ -21,7 +21,8 @@ def create_usuario():
         new_usuario = Usuario(
             username=data['username'],
             email=data['email'],
-            password=data['password']
+            password=data['password'],
+            notificaciones=data.get('notificaciones', False)
         )
         db.session.add(new_usuario)
         db.session.commit()
@@ -43,9 +44,9 @@ def update_usuario(id):
         if 'email' in data:
             usuario.email = data['email']
         if 'password' in data:
-            # Note: The Usuario model should handle hashing if possible, 
-            # or it should be done here if not in the model.
-            usuario.password = data['password']
+            usuario.set_password(data['password'])
+        if 'notificaciones' in data:
+            usuario.notificaciones = data['notificaciones']
             
         db.session.commit()
         return jsonify({'status': 'success', 'message': 'Usuario actualizado'}), 200

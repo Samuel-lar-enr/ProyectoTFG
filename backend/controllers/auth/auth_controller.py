@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from models import db, Usuario
+from services.email_service import send_welcome_email
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -31,6 +32,9 @@ def register():
         
         # Opcional: Login automático tras registro
         login_user(new_usuario)
+        
+        # Enviar email de bienvenida
+        send_welcome_email(email, username)
         
         return jsonify({
             'status': 'success', 

@@ -12,6 +12,8 @@ class Usuario(db.Model, UserMixin):
     estado = db.Column(db.Integer, default=1)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
     avatar = db.Column(db.String(255))
+    notificaciones = db.Column(db.Boolean, default=False)
+
     
     # Relationships
     roles = db.relationship('Rol', secondary='usuario_rol', backref='usuarios')
@@ -22,13 +24,14 @@ class Usuario(db.Model, UserMixin):
     blogs = db.relationship('Blog', backref='autor')
     reacciones = db.relationship('ReaccionBlog', backref='usuario')
 
-    def __init__(self, username, email, password=None, estado=1, avatar=None):
+    def __init__(self, username, email, password=None, estado=1, avatar=None, notificaciones=False):
         self.username = username
         self.email = email
         if password:
             self.set_password(password)
         self.estado = estado
         self.avatar = avatar
+        self.notificaciones = notificaciones
 
     def to_dict(self):
         return {
@@ -37,6 +40,7 @@ class Usuario(db.Model, UserMixin):
             'email': self.email,
             'estado': self.estado,
             'avatar': self.avatar,
+            'notificaciones': self.notificaciones,
             'fecha_creacion': self.fecha_creacion.isoformat() if self.fecha_creacion else None,
             'roles': [role.nombre for role in self.roles]
         }
