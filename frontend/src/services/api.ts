@@ -21,14 +21,18 @@ import type {
   PostTagRequest,
   Puesto,
   PostPuestoRequest,
-  ReservaEvento
+  ReservaEvento,
+  ForgotPasswordRequest,
+  ResetPasswordRequest
 } from '../types/apiTypes';
+
+
 
 /**
  * Configuración de instancia de Axios para el TFG Iglesia
  * Usamos cookies de sesión (Flask-Login)
  */
-const api = axios.create({
+export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
   headers: {
     'Content-Type': 'application/json',
@@ -55,8 +59,17 @@ export const authService = {
   logout: async (): Promise<GenericResponse> => {
     const res = await api.post<GenericResponse>('/auth/logout');
     return res.data;
+  },
+  forgotPassword: async (data: ForgotPasswordRequest): Promise<GenericResponse> => {
+    const res = await api.post<GenericResponse>('/auth/forgot-password', data);
+    return res.data;
+  },
+  resetPassword: async (data: ResetPasswordRequest): Promise<GenericResponse> => {
+    const res = await api.post<GenericResponse>('/auth/reset-password', data);
+    return res.data;
   }
 };
+
 
 /**
  * SERVICIOS DE USUARIOS

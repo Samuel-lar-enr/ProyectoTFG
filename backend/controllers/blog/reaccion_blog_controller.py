@@ -4,6 +4,24 @@ from services.auth_service import check_permission
 
 reaccion_blog_bp = Blueprint('reaccion_blog', __name__)
 
+@reaccion_blog_bp.route('/', methods=['GET'])
+def get_reacciones_blog():
+    reacciones = ReaccionBlog.query.all()
+    result = []
+    from models import Usuario, Reaccion
+    for rb in reacciones:
+        user = Usuario.query.get(rb.id_user)
+        reac = Reaccion.query.get(rb.id_reaccion)
+        result.append({
+            'id': rb.id,
+            'id_user': rb.id_user,
+            'username': user.username if user else 'Unknown',
+            'id_blog': rb.id_blog,
+            'id_reaccion': rb.id_reaccion,
+            'tipo': reac.emoji if reac else '👍'
+        })
+    return jsonify(result)
+
 @reaccion_blog_bp.route('/', methods=['POST'])
 def create_reaccion_blog():
     data = request.get_json()

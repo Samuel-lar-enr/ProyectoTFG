@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from models import db, Usuario
+from models import db, Usuario, Rol
 from services.auth_service import check_permission
 
 usuario_bp = Blueprint('usuario', __name__)
@@ -24,6 +24,12 @@ def create_usuario():
             password=data['password'],
             notificaciones=data.get('notificaciones', False)
         )
+        
+        roles_names = data.get('roles', [])
+        if roles_names:
+            found_roles = Rol.query.filter(Rol.nombre.in_(roles_names)).all()
+            new_usuario.roles = found_roles
+            
         db.session.add(new_usuario)
         db.session.commit()
         return jsonify({'status': 'success', 'message': 'Usuario creado', 'id': new_usuario.id}), 201
@@ -43,17 +49,21 @@ def update_usuario(id):
             usuario.username = data['username']
         if 'email' in data:
             usuario.email = data['email']
-        if 'password' in data:
+        if 'password' in data and data['password']:
             usuario.set_password(data['password'])
         if 'notificaciones' in data:
             usuario.notificaciones = data['notificaciones']
+            
+        if 'roles' in data:
+            roles_names = data['roles']
+            found_roles = Rol.query.filter(Rol.nombre.in_(roles_names)).all()
+            usuario.roles = found_roles
             
         db.session.commit()
         return jsonify({'status': 'success', 'message': 'Usuario actualizado'}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'status': 'error', 'message': str(e)}), 400
-
 
 @usuario_bp.route('/<int:id>', methods=['DELETE'])
 def delete_usuario(id):

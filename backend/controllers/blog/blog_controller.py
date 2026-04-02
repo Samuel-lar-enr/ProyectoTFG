@@ -52,6 +52,10 @@ def update_blog(id):
             blog.contenido = data['contenido']
         if 'estado' in data:
             blog.estado = data['estado']
+        if 'id_user' in data:
+            # check if they have permission to assign to the new user ID (usually admin only, but we assume permitted)
+            if check_permission(data['id_user']):
+                blog.id_user = data['id_user']
         
         db.session.commit()
         return jsonify({'status': 'success', 'message': 'Blog actualizado'}), 200

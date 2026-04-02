@@ -170,3 +170,13 @@ export interface PostPuestoRequest {
   requiere_confirmacion?: boolean;
   estado?: number;
 }
+
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  password: string;
+}
+

@@ -13,6 +13,8 @@ class Usuario(db.Model, UserMixin):
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
     avatar = db.Column(db.String(255))
     notificaciones = db.Column(db.Boolean, default=False)
+    reset_token = db.Column(db.String(100), unique=True, nullable=True)
+    reset_expiration = db.Column(db.DateTime, nullable=True)
 
     
     # Relationships

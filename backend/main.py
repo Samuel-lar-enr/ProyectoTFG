@@ -13,11 +13,22 @@ from controllers import register_blueprints
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 app = Flask(__name__)
-CORS(app, supports_credentials=True)
+# Permitir tanto localhost como 127.0.0.1 para evitar bloqueos de CORS en Chrome/Edge
+CORS(app, supports_credentials=True, origins=[
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'http://localhost:5174',
+    'http://127.0.0.1:5174'
+])
 
 # Configuración de la base de datos (Prioriza variable de entorno DB_URL)
 db_url = os.getenv('DB_URL', 'mysql+pymysql://admin:admin123@localhost:3306/iglesia_db')
+print(f"DEBUG: Using DB_URL: {db_url}")
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    "pool_recycle": 280,
+    "pool_pre_ping": True,
+}
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
 
 # Configuración de Email
@@ -44,6 +55,17 @@ def load_user(user_id):
 
 # Registrar rutas de la API
 register_blueprints(app)
+
+from flask_cors import cross_origin
+
+@app.errorhandler(500)
+@cross_origin(supports_credentials=True, origins=['http://localhost:5174', 'http://127.0.0.1:5174', 'http://localhost:5173', 'http://127.0.0.1:5173'])
+def handle_500(e):
+    return jsonify({
+        'status': 'error',
+        'message': 'Internal Server Error (DB Issue)',
+        'error': str(e)
+    }), 500
 
 @app.route('/')
 def index():
@@ -182,6 +204,6 @@ if __name__ == '__main__':
         if not success:
             print("Error crítico: No se ha podido conectar con la base de datos tras varios intentos.")
     
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5000, host='0.0.0.0')
 
 
