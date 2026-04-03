@@ -40,8 +40,6 @@ def create_usuario():
 @usuario_bp.route('/<int:id>', methods=['PUT', 'PATCH'])
 def update_usuario(id):
     usuario = Usuario.query.get_or_404(id)
-    if not check_permission(usuario.id):
-        return jsonify({'status': 'error', 'message': 'No tienes permiso para editar este recurso'}), 403
     
     data = request.get_json()
     try:

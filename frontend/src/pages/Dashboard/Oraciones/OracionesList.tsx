@@ -8,11 +8,13 @@ interface Oracion {
   id: number;
   id_user: number;
   autor: string;
+  username_real: string;
   titulo: string;
   contenido: string;
   fecha_creacion: string;
   duracion_dias?: number;
   estado: number;
+  anonima: boolean;
 }
 
 const OracionesList: React.FC = () => {
@@ -116,8 +118,9 @@ const OracionesList: React.FC = () => {
 
   const filtered = oraciones.filter(o => 
     o.id.toString().includes(searchTerm) || 
+    o.id.toString().includes(searchTerm) || 
     o.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    o.autor.toLowerCase().includes(searchTerm.toLowerCase())
+    o.username_real.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -160,7 +163,12 @@ const OracionesList: React.FC = () => {
                 filtered.map((o) => (
                   <tr key={o.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-6 py-4 font-mono text-gray-400">#{o.id}</td>
-                    <td className="px-6 py-4 font-medium text-gray-900">{o.autor}</td>
+                    <td className="px-6 py-4 font-medium text-gray-900">
+                       <div className="flex flex-col">
+                          <span>{o.username_real}</span>
+                          {o.anonima && <span className="text-[10px] text-gray-400 uppercase font-black tracking-tighter">🔒 Anónimo en público</span>}
+                       </div>
+                    </td>
                     <td className="px-6 py-4">{o.titulo}</td>
                     <td className="px-6 py-4">{new Date(o.fecha_creacion).toLocaleDateString()}</td>
                     <td className="px-6 py-4 text-center">

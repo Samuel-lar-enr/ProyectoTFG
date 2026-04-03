@@ -39,3 +39,23 @@ def delete_tag(id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'status': 'error', 'message': str(e)}), 400
+
+@tag_bp.route('/<int:id>', methods=['PUT', 'PATCH'])
+def update_tag(id):
+    tag = Tag.query.get_or_404(id)
+    # Only Admin/Pastor can update Tags
+    if not check_permission():
+        return jsonify({'status': 'error', 'message': 'No tienes permiso para editar este recurso'}), 403
+    
+    data = request.get_json()
+    try:
+        if 'nombre' in data:
+            tag.nombre = data['nombre']
+        if 'tipo' in data:
+            tag.tipo = data['tipo']
+            
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': 'Etiqueta actualizada'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'status': 'error', 'message': str(e)}), 400

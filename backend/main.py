@@ -8,6 +8,8 @@ from flask_migrate import Migrate
 from flask_mailman import Mail
 from models import db, Usuario
 from controllers import register_blueprints
+from flask_apscheduler import APScheduler
+from datetime import datetime, timedelta
 
 # Cargar variables de entorno desde el .env de la raíz
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
@@ -43,6 +45,76 @@ app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER')
 db.init_app(app)
 migrate = Migrate(app, db)
 mail = Mail(app)
+
+# Scheduler para limpieza automática
+scheduler = APScheduler()
+scheduler.init_app(app)
+scheduler.start()
+
+def clean_expired_oraciones():
+    with app.app_context():
+        print(f"[{datetime.now()}] Ejecutando limpieza de oraciones caducadas...")
+        from models import Oracion, OracionRecordatorio
+        # Seleccionar oraciones activas con duración definida
+        active_prayers = Oracion.query.filter(Oracion.estado == 1, Oracion.duracion_dias != None).all()
+        count = 0
+        for prayer in active_prayers:
+            expiration_date = prayer.fecha_creacion + timedelta(days=prayer.duracion_dias)
+            if datetime.utcnow() > expiration_date:
+                prayer.estado = 0
+                # Eliminar recordatorios asociados si la oración deja de estar activa
+                OracionRecordatorio.query.filter_by(id_oracion=prayer.id).delete()
+                count += 1
+        
+        if count > 0:
+            db.session.commit()
+            print(f"Se han desactivado {count} oraciones caducadas y limpiado sus recordatorios.")
+        else:
+            print("No se encontraron oraciones caducadas.")
+
+def daily_prayer_notifications():
+    with app.app_context():
+        print(f"[{datetime.now()}] Iniciando envío de notificaciones de oración...")
+        from models import Usuario, OracionRecordatorio, Oracion
+        from flask_mailman import EmailMessage
+
+        # Buscamos todos los usuarios que tengan al menos un recordatorio
+        users_with_reminders = Usuario.query.join(OracionRecordatorio).all()
+        
+        for user in users_with_reminders:
+            # Obtener oraciones recordadas por este usuario (que sigan activas)
+            reminder_prayers = db.session.query(Oracion).join(OracionRecordatorio).filter(
+                OracionRecordatorio.id_user == user.id,
+                Oracion.estado == 1
+            ).all()
+
+            if not reminder_prayers:
+                continue
+
+            # Crear contenido del email
+            body = f"Hola {user.username},\n\nAquí tienes las peticiones por las que te comprometiste a orar hoy:\n\n"
+            for p in reminder_prayers:
+                body += f"🙏 {p.titulo}\n   Mensaje: {p.contenido}\n   Autor: {'Anónimo' if p.anonima else p.usuario.username}\n\n"
+            
+            body += "\nQue Dios te bendiga,\nTu Iglesia Online"
+
+            try:
+                msg = EmailMessage(
+                    "📅 Recordatorio: Tus oraciones para hoy",
+                    body,
+                    os.getenv('MAIL_DEFAULT_SENDER'),
+                    [user.email]
+                )
+                msg.send()
+                print(f"Email enviado a {user.email}")
+            except Exception as e:
+                print(f"Error enviando email a {user.email}: {e}")
+
+# Ejecutar cada 12 horas la limpieza
+scheduler.add_job(id='clean_prayers', func=clean_expired_oraciones, trigger='interval', hours=12)
+
+# Ejecutar notificación diaria (ej: cada 24 horas)
+scheduler.add_job(id='daily_notifications', func=daily_prayer_notifications, trigger='interval', hours=24)
 
 # Login Manager
 login_manager = LoginManager()

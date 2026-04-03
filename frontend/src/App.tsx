@@ -25,6 +25,7 @@ import PuestosList from './pages/Dashboard/Organization/PuestosList';
 import { DashboardProvider } from './context/DashboardContext';
 
 import Home from './pages/Home';
+import OracionesPage from './pages/OracionesPage';
 
 function App() {
   return (
@@ -43,7 +44,6 @@ function App() {
           <Route element={<Layout />}>
             <Route path="/" element={<Home />} />
             
-            {/* Otras rutas protegidas irían aquí */}
             <Route path="/eventos" element={<ProtectedRoute>
                <div className="bg-white p-12 rounded-3xl shadow-sm text-center">
                  <h2 className="text-3xl font-bold text-gray-900">Eventos</h2>
@@ -52,10 +52,7 @@ function App() {
             </ProtectedRoute>} />
             
             <Route path="/oraciones" element={<ProtectedRoute>
-               <div className="bg-white p-12 rounded-3xl shadow-sm text-center">
-                 <h2 className="text-3xl font-bold text-gray-900">Oraciones</h2>
-                 <p className="mt-4 text-gray-500">Próximamente más contenido...</p>
-               </div>
+               <OracionesPage />
             </ProtectedRoute>} />
 
             {/* Dashboard para Admin y Pastor */}

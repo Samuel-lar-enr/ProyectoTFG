@@ -30,8 +30,17 @@ def create_oracion():
             titulo=data['titulo'],
             contenido=data['contenido'],
             duracion_dias=data.get('duracion_dias'),
-            estado=data.get('estado', 1)
+            estado=data.get('estado', 1),
+            anonima=data.get('anonima', False)
         )
+        
+        # Guardar Tags asociados
+        tags_data = data.get('tags', [])
+        if tags_data:
+            from models import Tag
+            tags = Tag.query.filter(Tag.nombre.in_(tags_data)).all()
+            new_oracion.tags = tags
+
         db.session.add(new_oracion)
         db.session.commit()
         return jsonify({'status': 'success', 'message': 'Peticion de oracion creada', 'id': new_oracion.id}), 201
@@ -55,6 +64,16 @@ def update_oracion(id):
             oracion.duracion_dias = data['duracion_dias']
         if 'estado' in data:
             oracion.estado = data['estado']
+        if 'anonima' in data:
+            oracion.anonima = data['anonima']
+            
+        # Handle Tags update
+        if 'tags' in data:
+            from models import Tag
+            tags_names = data['tags']
+            if isinstance(tags_names, list):
+                new_tags = Tag.query.filter(Tag.nombre.in_(tags_names)).all()
+                oracion.tags = new_tags
             
         db.session.commit()
         return jsonify({'status': 'success', 'message': 'Oracion actualizada'}), 200
