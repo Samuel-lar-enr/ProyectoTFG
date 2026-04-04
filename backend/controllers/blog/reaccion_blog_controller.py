@@ -26,19 +26,33 @@ def get_reacciones_blog():
 def create_reaccion_blog():
     data = request.get_json()
     user_id = data.get('id_user')
+    id_blog = data.get('id_blog')
+    id_reaccion = data.get('id_reaccion')
 
     if not check_permission(user_id):
-        return jsonify({'status': 'error', 'message': 'No tienes permiso para crear este recurso para este usuario'}), 403
+        return jsonify({'status': 'error', 'message': 'No tienes permiso'}), 403
+
+    # Check if reaction already exists (Toggle logic)
+    existing = ReaccionBlog.query.filter_by(
+        id_user=user_id,
+        id_blog=id_blog,
+        id_reaccion=id_reaccion
+    ).first()
 
     try:
-        new_rb = ReaccionBlog(
-            id_user=user_id,
-            id_blog=data['id_blog'],
-            id_reaccion=data['id_reaccion']
-        )
-        db.session.add(new_rb)
-        db.session.commit()
-        return jsonify({'status': 'success', 'message': 'Reaccion anadida al post', 'id': new_rb.id}), 201
+        if existing:
+            db.session.delete(existing)
+            db.session.commit()
+            return jsonify({'status': 'success', 'message': 'Reacción eliminada', 'action': 'removed'}), 200
+        else:
+            new_rb = ReaccionBlog(
+                id_user=user_id,
+                id_blog=id_blog,
+                id_reaccion=id_reaccion
+            )
+            db.session.add(new_rb)
+            db.session.commit()
+            return jsonify({'status': 'success', 'message': 'Reacción añadida', 'id': new_rb.id, 'action': 'added'}), 201
     except Exception as e:
         db.session.rollback()
         return jsonify({'status': 'error', 'message': str(e)}), 400

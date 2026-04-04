@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
@@ -8,11 +8,14 @@ interface Oracion {
   id: number;
   id_user: number;
   autor: string;
+  autor_roles?: string[];
   titulo: string;
   contenido: string;
   fecha_creacion: string;
   estado: number;
   tags: string[];
+  anonima: boolean;
+  duracion_dias: number;
 }
 
 const OracionesPage: React.FC = () => {
@@ -21,12 +24,13 @@ const OracionesPage: React.FC = () => {
   const [oraciones, setOraciones] = useState<Oracion[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [editingOracion, setEditingOracion] = useState<Oracion | null>(null);
   const [viewingOracion, setViewingOracion] = useState<Oracion | null>(null);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [userRecordatorios, setUserRecordatorios] = useState<number[]>([]);
   
-  // Form states
-  const [newOracion, setNewOracion] = useState({
+  const [formOracion, setFormOracion] = useState({
     titulo: '',
     contenido: '',
     tags: [] as string[],
@@ -40,17 +44,14 @@ const OracionesPage: React.FC = () => {
     try {
       setLoading(true);
       const res = await api.get('/oraciones/');
-      // Filter only active ones for public view
       const activeOraciones = (res.data.data || res.data).filter((o: Oracion) => o.estado === 1);
       setOraciones(activeOraciones);
       
-      // Si el usuario está logueado, cargar sus recordatorios
       if (user) {
         const recRes = await api.get(`/recordatorios/?user_id=${user.id}`);
         setUserRecordatorios(recRes.data.map((r: any) => r.id_oracion));
       }
     } catch (error) {
-      console.error(error);
       toast.error('Error al cargar las oraciones');
     } finally {
       setLoading(false);
@@ -60,21 +61,14 @@ const OracionesPage: React.FC = () => {
   useEffect(() => {
     fetchOraciones();
     refreshTags();
-  }, [user]); // Recargar si el usuario cambia (login/logout)
+  }, [user]);
 
   const handleToggleReminder = async (e: React.MouseEvent, oracionId: number) => {
-    e.stopPropagation(); // Evitar abrir el detalle al pulsar la campana
-    if (!user) {
-      toast.error('Debes iniciar sesión para guardar recordatorios');
-      return;
-    }
+    e.stopPropagation();
+    if (!user) return toast.error('Debes iniciar sesión');
 
     try {
-      const res = await api.post('/recordatorios/toggle', {
-        id_user: user.id,
-        id_oracion: oracionId
-      });
-      
+      const res = await api.post('/recordatorios/toggle', { id_user: user.id, id_oracion: oracionId });
       if (res.data.action === 'added') {
         setUserRecordatorios(prev => [...prev, oracionId]);
         toast.success('Añadido a tus oraciones diarias');
@@ -87,95 +81,123 @@ const OracionesPage: React.FC = () => {
     }
   };
 
-  const handleCreateOracion = async (e: React.FormEvent) => {
+  const handleCreateOrUpdateOracion = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) {
-      toast.error('Debes iniciar sesión para pedir oración');
-      return;
-    }
+    if (!user) return toast.error('Inicia sesión');
 
     try {
-      await api.post('/oraciones/', {
-        ...newOracion,
-        id_user: user.id,
-        estado: 1
-      });
-      toast.success('Petición de oración enviada');
+      if (editingOracion) {
+        await api.put(`/oraciones/${editingOracion.id}`, { ...formOracion, id_user: user.id });
+        toast.success('Petición actualizada');
+      } else {
+        await api.post('/oraciones/', { ...formOracion, id_user: user.id, estado: 1 });
+        toast.success('Petición enviada');
+      }
       setShowModal(false);
-      setNewOracion({ titulo: '', contenido: '', tags: [], duracion_dias: 30, anonima: false });
+      setEditingOracion(null);
+      setFormOracion({ titulo: '', contenido: '', tags: [], duracion_dias: 30, anonima: false });
       fetchOraciones();
     } catch (error) {
-      toast.error('Error al enviar la oración');
+      toast.error('Error al guardar la oración');
     }
   };
 
+  const handleEditInit = (e: React.MouseEvent, oracion: Oracion) => {
+    e.stopPropagation();
+    setEditingOracion(oracion);
+    setFormOracion({
+      titulo: oracion.titulo,
+      contenido: oracion.contenido,
+      tags: oracion.tags || [],
+      duracion_dias: oracion.duracion_dias || 30,
+      anonima: oracion.anonima || false
+    });
+    setShowModal(true);
+  };
+
+  const handleDeleteOracion = async (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
+    if (!window.confirm('¿Eliminar esta petición de oración?')) return;
+
+    try {
+      await api.delete(`/oraciones/${id}`);
+      setOraciones(prev => prev.filter(o => o.id !== id));
+      toast.success('Oración eliminada');
+    } catch (error) {
+      toast.error('Error al eliminar');
+    }
+  };
+
+  const isOfficial = (o: Oracion) => 
+    o.anonima ? false : o.autor_roles?.some(r => r === 'administrador' || r === 'pastor');
+
+  const filteredOraciones = useMemo(() => {
+    let result = oraciones;
+    if (activeFilter === 'OFICIAL') {
+      result = result.filter(o => isOfficial(o));
+    } else if (activeFilter) {
+      result = result.filter(o => o.tags?.includes(activeFilter));
+    }
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(o => o.titulo.toLowerCase().includes(q) || o.contenido.toLowerCase().includes(q));
+    }
+    return result;
+  }, [oraciones, activeFilter, searchQuery]);
+
   const toggleTag = (tagName: string) => {
-    setNewOracion(prev => ({
+    setFormOracion(prev => ({
       ...prev,
-      tags: prev.tags.includes(tagName) 
-        ? prev.tags.filter(t => t !== tagName)
-        : [...prev.tags, tagName]
+      tags: prev.tags.includes(tagName) ? prev.tags.filter(t => t !== tagName) : [...prev.tags, tagName]
     }));
   };
 
-  // Define if the author is an official (admin/pastor)
-  const isOfficial = (o: Oracion) => 
-    (o as any).anonima ? false : (o as any).autor_roles?.some((r: string) => r === 'administrador' || r === 'pastor');
-
-  // Filter oraciones based on selected tag
-  const filteredOraciones = activeFilter 
-    ? oraciones.filter(o => o.tags?.includes(activeFilter))
-    : oraciones;
-
   return (
-    <div className="min-h-screen bg-church-dark pt-24 pb-20">
+    <div className="min-h-screen bg-slate-900 pt-24 pb-20">
       <div className="max-w-6xl mx-auto px-6">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
           <div>
-            <span className="text-church-terracotta font-bold uppercase tracking-[.3em] text-xs mb-3 block">Muro de Intercesión</span>
+            <span className="text-church-terracotta font-black uppercase tracking-widest text-[10px] mb-3 block">Muro de Intercesión</span>
             <h1 className="text-4xl md:text-5xl font-serif text-white">Cadena de Oración</h1>
-            <p className="text-white/50 mt-4 max-w-xl">
-              "Donde dos o tres se reúnen en mi nombre, allí estoy yo en medio de ellos." 
-              Comparte tu carga con nosotros o únete en oración por los demás.
-            </p>
           </div>
-          <button 
-            onClick={() => setShowModal(true)}
-            className="bg-church-terracotta text-white px-8 py-4 rounded-xl font-bold uppercase tracking-widest hover:bg-church-terracotta/90 transition-all shadow-xl hover:scale-105 active:scale-95"
-          >
-            Pedir Oración
-          </button>
+          <div className="flex items-center space-x-4">
+             <div className="relative">
+                <input 
+                  type="text" 
+                  placeholder="Buscar peticiones..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 pr-4 py-3 bg-white/5 border-none rounded-xl text-white text-sm focus:ring-2 focus:ring-church-terracotta/50 transition-all w-64 shadow-inner"
+                />
+                <svg className="w-4 h-4 absolute left-3 top-3.5 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+             </div>
+             <button onClick={() => { setEditingOracion(null); setFormOracion({titulo:'', contenido:'', tags:[], duracion_dias:30, anonima:false}); setShowModal(true); }} className="bg-church-terracotta text-white px-8 py-3 rounded-xl font-bold uppercase tracking-widest hover:bg-church-terracotta/90 transition-all shadow-xl text-sm">
+                Pedir Oración
+             </button>
+          </div>
         </div>
 
-        {/* Filter Bar */}
-        <div className="flex flex-wrap items-center gap-3 mb-12 border-b border-white/5 pb-8">
-           <span className="text-white/30 text-[10px] font-bold uppercase tracking-widest mr-2">Filtrar por tema:</span>
+        <div className="flex flex-wrap items-center gap-3 mb-12 border-b pb-8">
+           <button onClick={() => setActiveFilter(null)} className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${activeFilter === null ? 'bg-church-olive text-white shadow-lg' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}>TODOS</button>
            <button 
-             onClick={() => setActiveFilter(null)}
-             className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${activeFilter === null ? 'bg-white text-church-dark shadow-lg shadow-white/10' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}
+              onClick={() => setActiveFilter(activeFilter === 'OFICIAL' ? null : 'OFICIAL')} 
+              className={`px-4 py-2 rounded-full text-xs font-bold transition-all border flex items-center gap-2 ${activeFilter === 'OFICIAL' ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-blue-50 border-blue-100 text-blue-400 hover:bg-blue-100'}`}
            >
-             TODAS
+              <span className="w-2 h-2 rounded-full bg-current animate-pulse"></span>
+              OFICIAL
            </button>
            {oracionTags.map(tag => (
-              <button 
-                key={tag.id}
-                onClick={() => setActiveFilter(activeFilter === tag.nombre ? null : tag.nombre)}
-                className={`px-4 py-2 rounded-full text-xs font-bold transition-all border ${
-                  activeFilter === tag.nombre 
-                  ? 'bg-church-terracotta border-church-terracotta text-white shadow-lg shadow-church-terracotta/20' 
-                  : 'bg-white/5 border-transparent text-white/40 hover:bg-white/10'
-                }`}
-              >
+              <button key={tag.id} onClick={() => setActiveFilter(activeFilter === tag.nombre ? null : tag.nombre)} className={`px-4 py-2 rounded-full text-xs font-bold transition-all border ${activeFilter === tag.nombre ? 'bg-church-terracotta border-church-terracotta text-white shadow-lg shadow-church-terracotta/20' : 'bg-white/5 border-transparent text-white/40 hover:bg-white/10'}`}>
                 {tag.nombre.toUpperCase()}
               </button>
            ))}
         </div>
 
-        {/* Grid of Prayers */}
         {loading ? (
-          <div className="flex justify-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+          <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div></div>
+        ) : filteredOraciones.length === 0 ? (
+          <div className="text-center py-20 bg-white/5 rounded-3xl border border-dashed border-white/10">
+             <p className="text-white/40 font-serif text-xl italic">No hay peticiones en este momento.</p>
           </div>
         ) : (
           <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
@@ -184,236 +206,114 @@ const OracionesPage: React.FC = () => {
                 key={o.id} 
                 onClick={() => setViewingOracion(o)}
                 className={`break-inside-avoid border rounded-2xl p-8 flex flex-col justify-between shadow-lg relative overflow-hidden group transition-all duration-300 transform hover:-translate-y-2 cursor-pointer ${
-                  isOfficial(o) 
-                  ? 'bg-blue-50 border-blue-200' 
-                  : 'bg-church-beige border-white/10 hover:border-church-terracotta/30'
+                  isOfficial(o) ? 'bg-blue-900/40 border-blue-500/30' : 'bg-slate-800/50 border-white/5 hover:border-church-terracotta/50'
                 }`}
               >
-                {/* Decorative Quote Mark */}
-                <div className={`absolute top-4 right-6 text-8xl font-serif select-none pointer-events-none ${
-                   isOfficial(o) ? 'text-blue-200/40' : 'text-church-terracotta/10'
-                }`}>"</div>
+                <div className={`absolute top-4 right-6 text-8xl font-serif select-none pointer-events-none opacity-5`}>"</div>
                 
                 <div>
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center justify-between mb-6">
                     <div className="flex flex-wrap gap-2">
                       {o.tags?.map(tag => (
-                        <span key={tag} className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded ${
-                          isOfficial(o) ? 'bg-blue-100/50 text-blue-700' : 'bg-church-olive/10 text-church-olive'
-                        }`}>
+                        <span key={tag} className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${isOfficial(o) ? 'bg-blue-500/20 text-blue-300' : 'bg-church-terracotta/20 text-church-terracotta'}`}>
                           {tag}
                         </span>
                       ))}
                     </div>
-                    {isOfficial(o) && (
-                       <span className="bg-blue-600 text-white text-[8px] px-2 py-0.5 rounded-full font-black uppercase tracking-tighter shadow-sm animate-pulse">OFICIAL</span>
-                    )}
+                    <div className="flex items-center space-x-1">
+                      {user?.id === o.id_user && (
+                        <>
+                          <button onClick={(e) => handleEditInit(e, o)} className="p-1.5 text-white/20 hover:text-white transition-colors bg-white/5 rounded-md"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
+                          <button onClick={(e) => handleDeleteOracion(e, o.id)} className="p-1.5 text-white/20 hover:text-red-400 transition-colors bg-white/5 rounded-md"><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                        </>
+                      )}
+                    </div>
                   </div>
-                  <h3 className={`text-xl font-serif mb-4 leading-tight ${isOfficial(o) ? 'text-blue-900' : 'text-church-olive'}`}>{o.titulo}</h3>
-                  <p className={`leading-relaxed italic mb-6 line-clamp-6 ${isOfficial(o) ? 'text-blue-800/80' : 'text-gray-600'}`}>
+                  <h3 className={`text-xl font-serif mb-4 leading-tight text-white`}>{o.titulo}</h3>
+                  <p className={`leading-relaxed italic mb-8 line-clamp-6 text-white/70 font-light`}>
                     "{o.contenido}"
                   </p>
                 </div>
 
-                <div className={`pt-6 border-t flex items-center justify-between ${isOfficial(o) ? 'border-blue-100' : 'border-gray-100'}`}>
-                  <div>
-                    <span className={`block text-xs font-bold uppercase tracking-widest ${isOfficial(o) ? 'text-blue-900' : 'text-gray-400'}`}>{o.autor}</span>
-                    <span className="text-[10px] text-gray-400">{new Date(o.fecha_creacion).toLocaleDateString()}</span>
+                <div className={`pt-6 border-t border-white/5 flex items-center justify-between`}>
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs ${isOfficial(o) ? 'bg-blue-600 text-white' : 'bg-church-terracotta text-white'}`}>
+                      {o.autor.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <span className="block text-[10px] font-black uppercase tracking-widest text-white/90">{o.autor}</span>
+                      <span className="text-[9px] text-white/30">{new Date(o.fecha_creacion).toLocaleDateString()}</span>
+                    </div>
                   </div>
                   <button 
                     onClick={(e) => handleToggleReminder(e, o.id)}
-                    className={`flex items-center space-x-1 transition-all hover:scale-110 ${
-                      userRecordatorios.includes(o.id) 
-                      ? 'text-amber-500 scale-105' 
-                      : (isOfficial(o) ? 'text-blue-600' : 'text-church-terracotta')
-                    }`}
+                    className={`flex items-center space-x-1.5 transition-all py-1.5 px-3 rounded-lg ${userRecordatorios.includes(o.id) ? 'bg-church-terracotta text-white' : 'bg-white/5 text-white/40 hover:bg-white/10'}`}
                   >
-                     <svg className="w-5 h-5 transition-all" fill={userRecordatorios.includes(o.id) ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                     </svg>
-                     <span className="text-[10px] font-black uppercase tracking-tighter">
-                       {userRecordatorios.includes(o.id) ? 'Recordando' : 'Recordar'}
-                     </span>
+                     <svg className="w-4 h-4" fill={userRecordatorios.includes(o.id) ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                     <span className="text-[10px] font-black uppercase tracking-tighter">{userRecordatorios.includes(o.id) ? 'Recordando' : 'Recordar'}</span>
                   </button>
                 </div>
               </div>
             ))}
           </div>
         )}
-
-        {/* Empty State */}
-        {!loading && filteredOraciones.length === 0 && (
-          <div className="text-center py-24 bg-white/5 rounded-3xl border border-white/5">
-            <svg className="w-16 h-16 text-white/20 mx-auto mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            <h3 className="text-white text-xl font-serif mb-2">No hay oraciones en esta categoría</h3>
-            <p className="text-white/40">{activeFilter ? `Sé el primero en pedir oración sobre ${activeFilter}` : 'Sé el primero en compartir tu petición'}</p>
-          </div>
-        )}
       </div>
 
-      {/* Modern Creation Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-church-dark/90 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-10 transform animate-in zoom-in slide-in-from-bottom-8 duration-500 overflow-y-auto max-h-[90vh]">
-            <h2 className="text-3xl font-serif text-church-olive mb-2">Compartir Oración</h2>
-            <p className="text-gray-500 text-sm mb-8">Tu petición será visible en el muro para que toda la comunidad ore por ti.</p>
-            
-            <form onSubmit={handleCreateOracion} className="space-y-6">
-              <div className="form-group">
-                <label className="form-label">Motivo breve</label>
-                <input 
-                  required 
-                  type="text" 
-                  className="form-input" 
-                  placeholder="Ej: Salud de mi abuela, Nuevo trabajo..."
-                  value={newOracion.titulo}
-                  onChange={(e) => setNewOracion({...newOracion, titulo: e.target.value})}
-                />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-xl animate-in fade-in duration-300">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-10 transform animate-in zoom-in duration-500 overflow-y-auto max-h-[90vh]">
+            <h2 className="text-3xl font-serif text-slate-900 mb-2">{editingOracion ? 'Editar Petición' : 'Pedir Oración'}</h2>
+            <p className="text-slate-400 text-sm mb-8">Nuestra comunidad se unirá bajo un mismo espíritu por tu petición.</p>
+            <form onSubmit={handleCreateOrUpdateOracion} className="space-y-6">
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Motivo breve</label>
+                <input required type="text" className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-church-terracotta text-slate-900" placeholder="Ej: Salud de mi hermano..." value={formOracion.titulo} onChange={e => setFormOracion({...formOracion, titulo: e.target.value})} />
               </div>
-
-              <div className="form-group">
-                <label className="form-label">Tu petición</label>
-                <textarea 
-                  required 
-                  rows={4} 
-                  className="form-input" 
-                  placeholder="Cuéntanos por qué necesitas oración..."
-                  value={newOracion.contenido}
-                  onChange={(e) => setNewOracion({...newOracion, contenido: e.target.value})}
-                ></textarea>
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Petición detallada</label>
+                <textarea required rows={4} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-church-terracotta text-slate-900" placeholder="Comparte con confianza..." value={formOracion.contenido} onChange={e => setFormOracion({...formOracion, contenido: e.target.value})} />
               </div>
-
-              <div className="form-group">
-                <label className="form-label">Duración (Días activos)</label>
-                <div className="flex items-center space-x-4">
-                   <input 
-                    type="range" 
-                    min="1" 
-                    max="30" 
-                    step="1"
-                    className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-church-terracotta"
-                    value={newOracion.duracion_dias}
-                    onChange={(e) => setNewOracion({...newOracion, duracion_dias: Number(e.target.value)})}
-                  />
-                  <span className="bg-church-beige px-3 py-1 rounded-lg border border-gray-100 font-bold text-church-olive min-w-14 text-center">
-                    {newOracion.duracion_dias}d
-                  </span>
-                </div>
+              <div className="flex items-center space-x-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                <input type="checkbox" id="anonimaForm" className="w-5 h-5 text-church-terracotta border-slate-300 rounded focus:ring-church-terracotta" checked={formOracion.anonima} onChange={e => setFormOracion({...formOracion, anonima: e.target.checked})} />
+                <label htmlFor="anonimaForm" className="text-xs font-bold text-slate-600">Publicar de forma anónima</label>
               </div>
-
-              <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                <input 
-                  type="checkbox" 
-                  id="anonima"
-                  className="w-5 h-5 text-church-terracotta border-gray-300 rounded focus:ring-church-terracotta"
-                  checked={newOracion.anonima}
-                  onChange={(e) => setNewOracion({...newOracion, anonima: e.target.checked})}
-                />
-                <div>
-                  <label htmlFor="anonima" className="text-sm font-bold text-gray-700 block">Publicar de forma anónima</label>
-                  <p className="text-[10px] text-gray-400">Tu nombre no será visible en el muro de oración.</p>
-                </div>
-              </div>
-
               <div className="form-group">
-                <label className="form-label">Tags (Opcional)</label>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Tags</label>
                 <div className="flex flex-wrap gap-2">
                   {oracionTags.map(tag => (
-                    <button 
-                      key={tag.id}
-                      type="button"
-                      onClick={() => toggleTag(tag.nombre)}
-                      className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all border ${
-                        newOracion.tags.includes(tag.nombre) 
-                        ? 'bg-church-olive text-white border-church-olive' 
-                        : 'bg-church-beige text-gray-500 border-gray-100 hover:border-church-olive/30'
-                      }`}
-                    >
-                      {tag.nombre.toUpperCase()}
-                    </button>
+                    <button key={tag.id} type="button" onClick={() => toggleTag(tag.nombre)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all border ${formOracion.tags.includes(tag.nombre) ? 'bg-slate-900 border-slate-900 text-white' : 'bg-slate-50 border-slate-200 text-slate-400 hover:border-slate-300'}`}>{tag.nombre}</button>
                   ))}
                 </div>
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <button 
-                  type="button" 
-                  onClick={() => setShowModal(false)}
-                  className="btn-ghost font-bold py-4 rounded-xl"
-                >
-                  Cancelar
-                </button>
-                <button 
-                  type="submit" 
-                  className="btn-primary py-4 rounded-xl"
-                >
-                  Publicar
-                </button>
+              <div className="grid grid-cols-2 gap-4 pt-4">
+                <button type="button" onClick={() => { setShowModal(false); setEditingOracion(null); }} className="px-8 py-4 text-slate-400 font-bold uppercase tracking-widest text-xs">Cancelar</button>
+                <button type="submit" className="bg-church-terracotta text-white px-10 py-4 rounded-2xl font-bold uppercase tracking-widest text-xs shadow-lg hover:shadow-church-terracotta/20 transition-all">{editingOracion ? 'Guardar Cambios' : 'Enviar Petición'}</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* Prayer Detail Modal */}
       {viewingOracion && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-church-dark/95 backdrop-blur-xl animate-in fade-in duration-300">
-           <div 
-             className={`relative w-full max-w-2xl rounded-3xl p-12 transition-all shadow-3xl animate-in zoom-in duration-300 border ${
-               isOfficial(viewingOracion) ? 'bg-blue-50 border-blue-200' : 'bg-church-beige border-white/20'
-             }`}
-           >
-              {/* Close button */}
-              <button 
-                onClick={() => setViewingOracion(null)}
-                className="absolute top-6 right-6 p-2 rounded-full hover:bg-black/5 transition-colors"
-              >
-                <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-
-              <div className="mb-8 flex flex-wrap gap-3">
-                 {viewingOracion.tags?.map(tag => (
-                    <span key={tag} className={`text-[12px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full ${
-                       isOfficial(viewingOracion) ? 'bg-blue-100 text-blue-700' : 'bg-church-olive text-white'
-                    }`}>
-                      {tag}
-                    </span>
-                 ))}
-                 {isOfficial(viewingOracion) && (
-                    <span className="bg-blue-600 text-white text-[12px] px-4 py-1.5 rounded-full font-black uppercase tracking-widest shadow-md">Cuenta Oficial</span>
-                 )}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/95 backdrop-blur-2xl animate-in fade-in duration-300">
+           <div className={`relative w-full max-w-2xl rounded-[3rem] p-12 transition-all shadow-3xl animate-in zoom-in duration-300 border ${isOfficial(viewingOracion) ? 'bg-blue-900/60 border-blue-500/50' : 'bg-slate-800/80 border-white/10'}`}>
+              <button onClick={() => setViewingOracion(null)} className="absolute top-8 right-8 p-3 rounded-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all">✕</button>
+              <div className="mb-10 flex flex-wrap gap-3">
+                 {viewingOracion.tags?.map(tag => <span key={tag} className="text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full bg-church-terracotta text-white shadow-lg">{tag}</span>)}
+                 {isOfficial(viewingOracion) && <span className="bg-blue-600 text-white text-[10px] px-4 py-1.5 rounded-full font-black uppercase tracking-widest shadow-lg">Cuenta Oficial</span>}
               </div>
-
-              <h2 className={`text-4xl font-serif mb-8 leading-tight ${isOfficial(viewingOracion) ? 'text-blue-900' : 'text-church-olive'}`}>
-                {viewingOracion.titulo}
-              </h2>
-
-              <div className="max-h-[50vh] overflow-y-auto pr-4 custom-scrollbar">
-                <p className={`text-xl leading-relaxed italic whitespace-pre-wrap ${isOfficial(viewingOracion) ? 'text-blue-800/80' : 'text-gray-700'}`}>
-                  "{viewingOracion.contenido}"
-                </p>
-              </div>
-
-              <div className={`mt-12 pt-8 border-t flex items-center justify-between ${isOfficial(viewingOracion) ? 'border-blue-100' : 'border-gray-200'}`}>
-                <div className="flex items-center space-x-4">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl ${isOfficial(viewingOracion) ? 'bg-blue-600 text-white' : 'bg-church-olive text-white'}`}>
-                    {viewingOracion.autor.charAt(0).toUpperCase()}
-                  </div>
+              <h2 className="text-4xl md:text-5xl font-serif mb-10 leading-tight text-white">{viewingOracion.titulo}</h2>
+              <p className="text-2xl leading-relaxed italic whitespace-pre-wrap text-white/80 font-light mb-12">"{viewingOracion.contenido}"</p>
+              <div className="mt-12 pt-10 border-t border-white/5 flex items-center justify-between">
+                <div className="flex items-center space-x-5">
+                  <div className="w-16 h-16 rounded-2xl bg-church-terracotta text-white flex items-center justify-center font-bold text-2xl shadow-xl">{viewingOracion.autor.charAt(0).toUpperCase()}</div>
                   <div>
-                    <span className={`block text-lg font-bold ${isOfficial(viewingOracion) ? 'text-blue-900' : 'text-church-olive'}`}>
-                      {viewingOracion.autor}
-                    </span>
-                    <span className="text-sm text-gray-400">Publicado el {new Date(viewingOracion.fecha_creacion).toLocaleDateString()}</span>
+                    <span className="block text-xl font-bold text-white mb-1">{viewingOracion.autor}</span>
+                    <span className="text-sm text-white/30 uppercase tracking-widest font-black">{new Date(viewingOracion.fecha_creacion).toLocaleDateString()}</span>
                   </div>
                 </div>
-                
-                <button className={`flex items-center space-x-2 px-8 py-4 rounded-2xl font-bold uppercase tracking-widest transition-all ${
-                   isOfficial(viewingOracion) ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-church-terracotta text-white hover:bg-church-terracotta/90'
-                }`}>
-                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" /></svg>
-                   <span>Orar por esto</span>
+                <button className="flex items-center space-x-3 bg-white text-slate-900 px-10 py-5 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-church-terracotta hover:text-white transition-all shadow-2xl">
+                   <span>Amén, me uno</span>
                 </button>
               </div>
            </div>

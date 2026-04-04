@@ -7,6 +7,8 @@ class ReaccionBlog(db.Model):
     id_blog = db.Column(db.Integer, db.ForeignKey('blog.id'), nullable=False)
     id_reaccion = db.Column(db.Integer, db.ForeignKey('reaccion.id'), nullable=False)
 
+    reaccion = db.relationship('Reaccion', backref='reacciones_blog')
+
     def __init__(self, id_user, id_blog, id_reaccion):
         self.id_user = id_user
         self.id_blog = id_blog

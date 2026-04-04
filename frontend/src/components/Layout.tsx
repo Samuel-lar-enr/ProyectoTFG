@@ -35,10 +35,9 @@ const Layout: React.FC = () => {
             </Link>
             <nav className="hidden md:flex space-x-8">
               <Link to="/" className={`text-sm font-semibold transition-colors uppercase tracking-wider ${isDarkNav ? 'text-gray-700 hover:text-church-terracotta' : 'text-white/90 hover:text-white'}`}>Inicio</Link>
-              <a href="#ministerios" className={`text-sm font-semibold transition-colors uppercase tracking-wider ${isDarkNav ? 'text-gray-700 hover:text-church-terracotta' : 'text-white/90 hover:text-white'}`}>Ministerios</a>
-              <a href="#reuniones" className={`text-sm font-semibold transition-colors uppercase tracking-wider ${isDarkNav ? 'text-gray-700 hover:text-church-terracotta' : 'text-white/90 hover:text-white'}`}>Reuniones</a>
               {isAuthenticated && (
                 <>
+                  <Link to="/blog" className={`text-sm font-semibold transition-colors uppercase tracking-wider ${isDarkNav ? 'text-gray-700 hover:text-church-terracotta' : 'text-white/90 hover:text-white'}`}>Blogs</Link>
                   <Link to="/eventos" className={`text-sm font-semibold transition-colors uppercase tracking-wider ${isDarkNav ? 'text-gray-700 hover:text-church-terracotta' : 'text-white/90 hover:text-white'}`}>Eventos</Link>
                   <Link to="/oraciones" className={`text-sm font-semibold transition-colors uppercase tracking-wider ${isDarkNav ? 'text-gray-700 hover:text-church-terracotta' : 'text-white/90 hover:text-white'}`}>Oraciones</Link>
                   

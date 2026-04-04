@@ -225,6 +225,9 @@ GET {{baseUrl}}/comentarios/
 ### Get comentarios for a specific blog (Query param)
 GET {{baseUrl}}/comentarios/?blog_id=1
 
+### Get ONLY top-level comentarios for a blog
+GET {{baseUrl}}/comentarios/?blog_id=1&padre_id=none
+
 ### Get single comentario
 GET {{baseUrl}}/comentarios/1
 
@@ -238,7 +241,21 @@ Content-Type: {{contentType}}
     "contenido": "Excelente post!"
 }
 
-### Delete comentario
+### Create a reply to a comentario (assuming ID 1 exists)
+POST {{baseUrl}}/comentarios/
+Content-Type: {{contentType}}
+
+{
+    "id_user": 1,
+    "id_blog": 1,
+    "id_padre": 1,
+    "contenido": "Gracias por el post!"
+}
+
+### Get replies for a specific comentario
+GET {{baseUrl}}/comentarios/?padre_id=1
+
+### Delete comentario (Soft delete)
 DELETE {{baseUrl}}/comentarios/1
 
 ###############################################################################

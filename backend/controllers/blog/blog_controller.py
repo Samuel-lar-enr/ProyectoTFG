@@ -6,14 +6,20 @@ blog_bp = Blueprint('blog', __name__)
 
 @blog_bp.route('/', methods=['GET'])
 def get_blogs():
+    from flask_login import current_user
+    user_id = current_user.id if current_user.is_authenticated else None
+    
     blogs = Blog.query.all()
-    return jsonify([b.to_dict() for b in blogs])
+    return jsonify([b.to_dict(current_user_id=user_id) for b in blogs])
 
 
 @blog_bp.route('/<int:id>', methods=['GET'])
 def get_blog(id):
+    from flask_login import current_user
+    user_id = current_user.id if current_user.is_authenticated else None
+    
     blog = Blog.query.get_or_404(id)
-    return jsonify(blog.to_dict())
+    return jsonify(blog.to_dict(current_user_id=user_id))
 
 
 @blog_bp.route('/', methods=['POST'])
@@ -29,8 +35,15 @@ def create_blog():
             id_user=user_id,
             titulo=data['titulo'],
             contenido=data['contenido'],
+            imagen=data.get('imagen'),
             estado=data.get('estado', 1)
         )
+        
+        if 'tags' in data:
+            from models import Tag
+            tags = Tag.query.filter(Tag.nombre.in_(data['tags'])).all()
+            new_blog.tags = tags
+            
         db.session.add(new_blog)
         db.session.commit()
         return jsonify({'status': 'success', 'message': 'Post de blog creado', 'id': new_blog.id}), 201
@@ -50,12 +63,16 @@ def update_blog(id):
             blog.titulo = data['titulo']
         if 'contenido' in data:
             blog.contenido = data['contenido']
+        if 'imagen' in data:
+            blog.imagen = data['imagen']
         if 'estado' in data:
             blog.estado = data['estado']
         if 'id_user' in data:
-            # check if they have permission to assign to the new user ID (usually admin only, but we assume permitted)
-            if check_permission(data['id_user']):
-                blog.id_user = data['id_user']
+            blog.id_user = data['id_user']
+        if 'tags' in data:
+            from models import Tag
+            tags = Tag.query.filter(Tag.nombre.in_(data['tags'])).all()
+            blog.tags = tags
         
         db.session.commit()
         return jsonify({'status': 'success', 'message': 'Blog actualizado'}), 200

@@ -33,6 +33,7 @@ class Comentario(db.Model):
             'id': self.id,
             'id_user': self.id_user,
             'username': self.autor.username if self.autor else "Anónimo",
+            'avatar': self.autor.avatar if self.autor else None,
             'id_blog': self.id_blog,
             'id_padre': self.id_padre,
             'contenido': self.contenido,

@@ -26,6 +26,7 @@ import { DashboardProvider } from './context/DashboardContext';
 
 import Home from './pages/Home';
 import OracionesPage from './pages/OracionesPage';
+import BlogsPage from './pages/BlogsPage';
 
 function App() {
   return (
@@ -54,6 +55,11 @@ function App() {
             <Route path="/oraciones" element={<ProtectedRoute>
                <OracionesPage />
             </ProtectedRoute>} />
+
+            <Route path="/blog" element={<ProtectedRoute>
+               <BlogsPage />
+            </ProtectedRoute>} />
+            <Route path="/blogs" element={<Navigate to="/blog" replace />} />
 
             {/* Dashboard para Admin y Pastor */}
             <Route path="/dashboard" element={
