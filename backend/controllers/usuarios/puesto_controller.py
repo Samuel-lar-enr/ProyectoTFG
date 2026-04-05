@@ -23,7 +23,6 @@ def create_puesto():
         new_puesto = Puesto(
             id_user=data['id_user'],
             id_area=data['id_area'],
-            id_rol=data['id_rol'],
             requiere_confirmacion=data.get('requiere_confirmacion', False),
             estado=data.get('estado', 1)
         )
@@ -44,8 +43,6 @@ def update_puesto(id):
     try:
         if 'id_area' in data:
             puesto.id_area = data['id_area']
-        if 'id_rol' in data:
-            puesto.id_rol = data['id_rol']
         if 'requiere_confirmacion' in data:
             puesto.requiere_confirmacion = data['requiere_confirmacion']
         if 'estado' in data:

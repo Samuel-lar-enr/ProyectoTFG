@@ -12,6 +12,7 @@ interface Evento {
   fecha_fin?: string;
   id_area: number;
   aforo_max: number;
+  estado: number;
 }
 
 const EventosList: React.FC = () => {
@@ -20,6 +21,7 @@ const EventosList: React.FC = () => {
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterTab, setFilterTab] = useState<'all' | 'published' | 'pending'>('all');
 
   const [showModal, setShowModal] = useState(false);
   const [editingEvento, setEditingEvento] = useState<Evento | null>(null);
@@ -125,11 +127,27 @@ const EventosList: React.FC = () => {
     return area ? area.nombre : `ID ${id}`;
   };
 
-  const filtered = eventos.filter(e => 
-    e.id.toString().includes(searchTerm) || 
-    e.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    getAreaName(e.id_area).toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleConfirm = async (id: number) => {
+    try {
+      await api.patch(`/eventos/${id}/confirmar`);
+      toast.success('Actividad confirmada y publicada');
+      fetchEventos();
+    } catch (error) {
+      toast.error('Error al confirmar actividad');
+    }
+  };
+
+  const filtered = eventos.filter(e => {
+    const matchesSearch = e.id.toString().includes(searchTerm) || 
+      e.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      getAreaName(e.id_area).toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (!matchesSearch) return false;
+    
+    if (filterTab === 'published') return e.estado === 1;
+    if (filterTab === 'pending') return e.estado === 2;
+    return true;
+  });
 
   return (
     <div>
@@ -139,6 +157,27 @@ const EventosList: React.FC = () => {
           + Nuevo Evento
         </button>
       </div>
+      <div className="flex items-center space-x-1 mb-8 bg-gray-100 p-1 rounded-xl w-fit">
+        <button 
+          onClick={() => setFilterTab('all')}
+          className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${filterTab === 'all' ? 'bg-white text-church-olive shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+        >
+          Todos ({eventos.length})
+        </button>
+        <button 
+          onClick={() => setFilterTab('published')}
+          className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${filterTab === 'published' ? 'bg-white text-green-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+        >
+          Publicados ({eventos.filter(e => e.estado === 1).length})
+        </button>
+        <button 
+          onClick={() => setFilterTab('pending')}
+          className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${filterTab === 'pending' ? 'bg-white text-amber-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+        >
+          Pendientes ({eventos.filter(e => e.estado === 2).length})
+        </button>
+      </div>
+
       <div className="mb-6 relative">
         <input 
           type="text" 
@@ -157,6 +196,7 @@ const EventosList: React.FC = () => {
                 <th className="px-6 py-4">ID</th>
                 <th className="px-6 py-4">Título del Evento</th>
                 <th className="px-6 py-4">Fecha y Hora</th>
+                <th className="px-6 py-4 text-center">Estado</th>
                 <th className="px-6 py-4">Ministerio (Área)</th>
                 <th className="px-6 py-4 text-center">Aforo Max</th>
                 <th className="px-6 py-4 text-center">Acciones</th>
@@ -175,6 +215,21 @@ const EventosList: React.FC = () => {
                     <td className="px-6 py-4">
                       {new Date(e.fecha_inicio).toLocaleDateString()} a las {new Date(e.fecha_inicio).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                     </td>
+                    <td className="px-6 py-4 text-center">
+                      {e.estado === 2 ? (
+                        <span className="px-2 py-1 bg-amber-50 text-amber-600 rounded-md font-black text-[9px] uppercase border border-amber-100 animate-pulse">
+                          Pendiente
+                        </span>
+                      ) : e.estado === 1 ? (
+                        <span className="px-2 py-1 bg-green-50 text-green-700 rounded-md font-black text-[9px] uppercase border border-green-100">
+                          Publicado
+                        </span>
+                      ) : (
+                        <span className="px-2 py-1 bg-gray-50 text-gray-500 rounded-md font-black text-[9px] uppercase border border-gray-100 italic">
+                          Oculto
+                        </span>
+                      )}
+                    </td>
                     <td className="px-6 py-4">
                        <span className="px-2 py-1 bg-purple-50 text-purple-700 rounded-md font-bold text-[10px] uppercase border border-purple-100">
                          {getAreaName(e.id_area)}
@@ -185,7 +240,12 @@ const EventosList: React.FC = () => {
                         {e.aforo_max || 'Ilimitado'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 flex justify-center space-x-3">
+                    <td className="px-6 py-4 flex justify-center items-center space-x-3">
+                      {e.estado === 2 && (
+                         <button onClick={() => handleConfirm(e.id)} className="w-8 h-8 flex items-center justify-center bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all shadow-sm tooltip" title="Aprobar y Publicar">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
+                         </button>
+                      )}
                       <button onClick={() => { setEditingEvento(e); setSelectedAreaId(e.id_area); setShowModal(true); }} className="text-blue-500 hover:text-blue-700 transition-colors tooltip" title="Editar">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                       </button>

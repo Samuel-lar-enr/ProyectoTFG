@@ -14,6 +14,7 @@ def register():
     username = data.get('username')
     email = data.get('email')
     password = data.get('password')
+    notificaciones = data.get('notificaciones', False)
 
     if not username or not email or not password:
         return jsonify({'status': 'error', 'message': 'Faltan datos obligatorios'}), 400
@@ -46,7 +47,8 @@ def register():
         new_usuario = Usuario(
             username=username,
             email=email,
-            password=password
+            password=password,
+            notificaciones=notificaciones
         )
         db.session.add(new_usuario)
         db.session.commit()

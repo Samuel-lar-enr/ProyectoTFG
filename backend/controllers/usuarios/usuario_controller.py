@@ -40,28 +40,41 @@ def create_usuario():
 @usuario_bp.route('/<int:id>', methods=['PUT', 'PATCH'])
 def update_usuario(id):
     usuario = Usuario.query.get_or_404(id)
-    
+    if not check_permission(id):
+        return jsonify({'status': 'error', 'message': 'No tienes permiso para actualizar este usuario'}), 403
+
     data = request.get_json()
+    print(f"DEBUG: Updating user {id} with data: {data}")
     try:
         if 'username' in data:
             usuario.username = data['username']
         if 'email' in data:
             usuario.email = data['email']
+        if 'avatar' in data:
+            usuario.avatar = data['avatar']
         if 'password' in data and data['password']:
             usuario.set_password(data['password'])
         if 'notificaciones' in data:
             usuario.notificaciones = data['notificaciones']
             
         if 'roles' in data:
-            roles_names = data['roles']
-            found_roles = Rol.query.filter(Rol.nombre.in_(roles_names)).all()
-            usuario.roles = found_roles
+            roles_names = []
+            for r in data['roles']:
+                if isinstance(r, dict) and 'nombre' in r:
+                    roles_names.append(r['nombre'])
+                elif isinstance(r, str):
+                    roles_names.append(r)
+            
+            if roles_names:
+                found_roles = Rol.query.filter(Rol.nombre.in_(roles_names)).all()
+                usuario.roles = found_roles
             
         db.session.commit()
         return jsonify({'status': 'success', 'message': 'Usuario actualizado'}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({'status': 'error', 'message': str(e)}), 400
+        print(f"ERROR updating user: {str(e)}")
+        return jsonify({'status': 'error', 'message': f"Error al actualizar: {str(e)}"}), 400
 
 @usuario_bp.route('/<int:id>', methods=['DELETE'])
 def delete_usuario(id):
@@ -74,6 +87,40 @@ def delete_usuario(id):
         db.session.delete(usuario)
         db.session.commit()
         return jsonify({'status': 'success', 'message': 'Usuario eliminado'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'status': 'error', 'message': str(e)}), 400
+
+@usuario_bp.route('/<int:id>/ban', methods=['PATCH'])
+def ban_usuario(id):
+    from flask_login import current_user as cu
+    # Solo admin/pastor pueden banear
+    role_ids = [rol.id for rol in cu.roles] if cu.is_authenticated else []
+    if 1 not in role_ids and 2 not in role_ids:
+        return jsonify({'status': 'error', 'message': 'No tienes permiso para banear usuarios'}), 403
+
+    usuario = Usuario.query.get_or_404(id)
+
+    # No puede banearse a sí mismo ni a otro admin
+    if usuario.id == cu.id:
+        return jsonify({'status': 'error', 'message': 'No puedes banearte a ti mismo'}), 400
+    target_roles = [rol.id for rol in usuario.roles]
+    if 1 in target_roles:
+        return jsonify({'status': 'error', 'message': 'No puedes banear a un administrador'}), 400
+
+    # Toggle: 1 -> 3 (ban), 3 -> 1 (unban)
+    if usuario.estado == 3:
+        usuario.estado = 1
+        msg = 'Usuario desbaneado correctamente'
+        action = 'unbanned'
+    else:
+        usuario.estado = 3
+        msg = 'Usuario baneado correctamente'
+        action = 'banned'
+
+    try:
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': msg, 'action': action, 'nuevo_estado': usuario.estado}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'status': 'error', 'message': str(e)}), 400

@@ -36,5 +36,6 @@ class Evento(db.Model):
             'estado': self.estado,
             'id_area': self.id_area,
             'id_user': self.id_user,
-            'tags': [tag.nombre for tag in self.tags]
+            'tags': [tag.nombre for tag in self.tags],
+            'total_reservas': len([r for r in self.reservas if r.estado == 1])
         }

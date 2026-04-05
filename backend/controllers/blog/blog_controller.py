@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from models import db, Blog
-from services.auth_service import check_permission
+from services.auth_service import check_permission, check_banned
 
 blog_bp = Blueprint('blog', __name__)
 
@@ -27,6 +27,9 @@ def create_blog():
     data = request.get_json()
     user_id = data.get('id_user')
     
+    if check_banned():
+        return jsonify({'status': 'error', 'message': 'Tu cuenta está suspendida. No puedes publicar contenido'}), 403
+
     if not check_permission(user_id):
         return jsonify({'status': 'error', 'message': 'No tienes permiso para crear este recurso para este usuario'}), 403
         

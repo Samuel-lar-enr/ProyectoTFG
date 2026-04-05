@@ -11,6 +11,11 @@ export interface User {
   notificaciones: boolean;
   fecha_creacion: string;
   roles: string[];
+  mis_puestos?: {
+    id: number;
+    id_area: number;
+    estado: number;
+  }[];
 }
 
 export interface Rol {

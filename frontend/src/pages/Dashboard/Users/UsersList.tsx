@@ -13,6 +13,7 @@ const UsersList: React.FC = () => {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [modalRoles, setModalRoles] = useState<string[]>([]);
   const [roleToAdd, setRoleToAdd] = useState('');
+  const [filter, setFilter] = useState<'all' | 'banned'>('all');
 
   const handleSaveUser = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -53,14 +54,36 @@ const UsersList: React.FC = () => {
     }
   };
 
+  const handleBan = async (user: User) => {
+    const isBanned = user.estado === 3;
+    const confirmMsg = isBanned 
+      ? '¿Quieres desbanear a este usuario?' 
+      : '¿Quieres banear a este usuario? No podrá crear contenido, solo leer.';
+
+    if (window.confirm(confirmMsg)) {
+      try {
+        await api.patch(`/usuarios/${user.id}/ban`);
+        toast.success(isBanned ? 'Usuario desbaneado' : 'Usuario baneado');
+        refreshUsers();
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || 'Error al procesar el baneo');
+      }
+    }
+  };
+
   const filteredUsers = users.filter((u) => {
     const term = searchTerm.toLowerCase();
-    return (
+    const matchesSearch = (
       u.id.toString().includes(term) ||
       u.username.toLowerCase().includes(term) ||
       u.email.toLowerCase().includes(term) ||
       new Date(u.fecha_creacion).toLocaleDateString().includes(term)
     );
+
+    if (filter === 'banned') {
+      return matchesSearch && u.estado === 3;
+    }
+    return matchesSearch;
   });
 
   return (
@@ -72,17 +95,34 @@ const UsersList: React.FC = () => {
         </button>
       </div>
 
-      <div className="mb-6 relative">
-        <input 
-          type="text" 
-          placeholder="Buscar por ID, Usuario, Email o Fecha..." 
-          className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-church-olive/20 focus:border-church-olive transition-all bg-gray-50"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-        <svg className="w-5 h-5 text-gray-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
+      <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
+        <div className="flex-1 relative">
+          <input 
+            type="text" 
+            placeholder="Buscar por ID, Usuario, Email o Fecha..." 
+            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-church-olive/20 focus:border-church-olive transition-all bg-gray-50 text-sm"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <svg className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+
+        <div className="flex bg-gray-100 p-1 rounded-lg">
+          <button
+            onClick={() => setFilter('all')}
+            className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${filter === 'all' ? 'bg-white shadow-sm text-church-olive' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            Todos
+          </button>
+          <button
+            onClick={() => setFilter('banned')}
+            className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${filter === 'banned' ? 'bg-white shadow-sm text-red-600' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            Baneados ({users.filter(u => u.estado === 3).length})
+          </button>
+        </div>
       </div>
 
       <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
@@ -112,7 +152,12 @@ const UsersList: React.FC = () => {
                           {u.avatar ? <img src={u.avatar} alt="avatar" className="rounded-full w-full h-full object-cover" /> : u.username.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <div className="font-medium text-gray-900">{u.username}</div>
+                          <div className="flex items-center space-x-2">
+                            <div className="font-medium text-gray-900">{u.username}</div>
+                            {u.estado === 3 && (
+                              <span className="px-1.5 py-0.5 bg-red-500 text-white text-[8px] font-black uppercase rounded shadow-sm">Baneado</span>
+                            )}
+                          </div>
                           <div className="text-xs text-gray-500">{u.email}</div>
                         </div>
                       </div>
@@ -130,6 +175,13 @@ const UsersList: React.FC = () => {
                     <td className="px-6 py-4 flex justify-center space-x-3">
                       <button onClick={() => { setEditingUser(u); setModalRoles(u.roles || []); setRoleToAdd(''); setShowModal(true); }} className="text-blue-500 hover:text-blue-700 transition-colors tooltip" title="Editar Rol">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                      </button>
+                      <button 
+                        onClick={() => handleBan(u)} 
+                        className={`${u.estado === 3 ? 'text-green-500 hover:text-green-700' : 'text-orange-500 hover:text-orange-700'} transition-colors tooltip`} 
+                        title={u.estado === 3 ? 'Desbanear Usuario' : 'Banear Usuario'}
+                      >
+                        <span className="text-xl">🔨</span>
                       </button>
                       <button onClick={() => handleDelete(u.id)} className="text-red-500 hover:text-red-700 transition-colors tooltip" title="Eliminar Usuario">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>

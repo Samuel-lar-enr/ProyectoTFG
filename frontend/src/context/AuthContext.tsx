@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { authService } from '../services/api';
+import { authService, api } from '../services/api';
 import type { User, LoginRequest, RegisterRequest } from '../types/apiTypes';
 import { toast } from 'sonner';
 
@@ -11,6 +11,7 @@ interface AuthContextType {
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => Promise<void>;
   checkSession: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -95,8 +96,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const refreshUser = async () => {
+    if (!user?.id) return;
+    try {
+      const res = await api.get(`/usuarios/${user.id}`);
+      setUser(res.data);
+    } catch (error) {
+      console.error('Error refreshing user:', error);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, register, logout, checkSession }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, register, logout, checkSession, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

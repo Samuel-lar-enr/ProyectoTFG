@@ -11,7 +11,7 @@ class Usuario(db.Model, UserMixin):
     password = db.Column(db.String(255), nullable=False)
     estado = db.Column(db.Integer, default=1)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
-    avatar = db.Column(db.String(255))
+    avatar = db.Column(db.Text)
     notificaciones = db.Column(db.Boolean, default=False)
     reset_token = db.Column(db.String(100), unique=True, nullable=True)
     reset_expiration = db.Column(db.DateTime, nullable=True)
@@ -44,7 +44,27 @@ class Usuario(db.Model, UserMixin):
             'avatar': self.avatar,
             'notificaciones': self.notificaciones,
             'fecha_creacion': self.fecha_creacion.isoformat() if self.fecha_creacion else None,
-            'roles': [role.nombre for role in self.roles]
+            'roles': [role.nombre for role in self.roles],
+            'mis_blogs': [blog.to_dict() for blog in self.blogs if blog.estado == 1],
+            'mis_oraciones': [ora.to_dict() for ora in self.oraciones],
+            'mis_reservas': [{
+                'id': res.id,
+                'id_evento': res.id_evento,
+                'titulo_evento': res.evento.titulo,
+                'fecha_evento': res.evento.fecha_inicio.isoformat(),
+                'estado': res.estado
+            } for res in self.reservas if res.estado == 1],
+            'mis_recordatorios': [{
+                'id': rec.id,
+                'id_oracion': rec.id_oracion,
+                'titulo_oracion': rec.oracion.titulo,
+                'autor_oracion': rec.oracion.usuario.username
+            } for rec in self.recordatorios if rec.oracion.estado == 1],
+            'mis_puestos': [{
+                'id': p.id,
+                'id_area': p.id_area,
+                'estado': p.estado
+            } for p in self.puestos if p.estado == 1]
         }
 
     #funciones

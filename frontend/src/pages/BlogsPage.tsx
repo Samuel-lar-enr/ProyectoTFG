@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
@@ -44,6 +45,7 @@ interface RenderCommentProps {
   handleDeleteComentario: (id: number) => void;
   level: number;
   user: any;
+  navigate: (path: string) => void;
 }
 
 const RenderComment: React.FC<RenderCommentProps> = ({ 
@@ -56,7 +58,8 @@ const RenderComment: React.FC<RenderCommentProps> = ({
   handleCreateComentario,
   handleDeleteComentario,
   level,
-  user
+  user,
+  navigate
 }) => {
   const replies = getCommentsTree(comment.id);
   const isReplying = replyingTo === comment.id;
@@ -97,6 +100,7 @@ const RenderComment: React.FC<RenderCommentProps> = ({
       <div className="flex items-center space-x-6">
         <button 
           onClick={() => {
+            if (!user) return navigate('/login');
             if (isReplying) {
               setReplyingTo(null);
             } else {
@@ -161,6 +165,7 @@ const RenderComment: React.FC<RenderCommentProps> = ({
               handleDeleteComentario={handleDeleteComentario}
               level={level + 1}
               user={user}
+              navigate={navigate}
             />
           ))}
         </div>
@@ -171,6 +176,7 @@ const RenderComment: React.FC<RenderCommentProps> = ({
 
 const BlogsPage: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { tags: allTags, refreshTags } = useDashboard();
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -284,7 +290,10 @@ const BlogsPage: React.FC = () => {
   };
 
   const handleCreateComentario = async (idPadre: number | null = null) => {
-    if (!user) return toast.error('Inicia sesión para comentar');
+    if (!user) {
+      toast.info('Inicia sesión para participar en la conversación');
+      return navigate('/login');
+    }
     if (!viewingBlog) return;
 
     const contenido = idPadre ? replyText : newComentario;
@@ -326,7 +335,10 @@ const BlogsPage: React.FC = () => {
   };
 
   const handleReaccion = async (blogId: number, reaccionId: number, emoji: string) => {
-    if (!user) return toast.error('Inicia sesión para reaccionar');
+    if (!user) {
+      toast.info('Inicia sesión para reaccionar a los posts');
+      return navigate('/login');
+    }
     
     setBlogs(prev => prev.map(b => {
       if (b.id !== blogId) return b;
@@ -392,7 +404,15 @@ const BlogsPage: React.FC = () => {
                 />
                 <svg className="w-4 h-4 absolute left-3 top-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
              </div>
-             <button onClick={() => { setEditingBlog(null); setBlogData({titulo:'', contenido:'', imagen:'', tags:[]}); setShowModal(true); }} className="bg-church-olive text-white px-6 py-3 rounded-xl font-bold uppercase tracking-widest hover:bg-church-olive/90 transition-all shadow-lg text-sm">
+             <button 
+                onClick={() => { 
+                  if (!user) return navigate('/login');
+                  setEditingBlog(null); 
+                  setBlogData({titulo:'', contenido:'', imagen:'', tags:[]}); 
+                  setShowModal(true); 
+                }} 
+                className="bg-church-olive text-white px-6 py-3 rounded-xl font-bold uppercase tracking-widest hover:bg-church-olive/90 transition-all shadow-lg text-sm"
+              >
                 Nuevo Post
              </button>
           </div>
@@ -516,7 +536,7 @@ const BlogsPage: React.FC = () => {
 
                   <div className="space-y-8">
                     {getCommentsTree(null).map(comment => (
-                      <RenderComment key={comment.id} comment={comment} getCommentsTree={getCommentsTree} replyingTo={replyingTo} setReplyingTo={setReplyingTo} replyText={replyText} setReplyText={setReplyText} handleCreateComentario={handleCreateComentario} handleDeleteComentario={handleDeleteComentario} level={0} user={user} />
+                      <RenderComment key={comment.id} comment={comment} getCommentsTree={getCommentsTree} replyingTo={replyingTo} setReplyingTo={setReplyingTo} replyText={replyText} setReplyText={setReplyText} handleCreateComentario={handleCreateComentario} handleDeleteComentario={handleDeleteComentario} level={0} user={user} navigate={navigate} />
                     ))}
                   </div>
                 </div>

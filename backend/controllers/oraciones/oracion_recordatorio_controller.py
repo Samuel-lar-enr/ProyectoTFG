@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from models import db, OracionRecordatorio, Oracion
-from services.auth_service import check_permission
+from services.auth_service import check_permission, check_banned
 
 oracion_recordatorio_bp = Blueprint('oracion_recordatorio', __name__)
 
@@ -21,6 +21,9 @@ def toggle_recordatorio():
 
     if not user_id or not oracion_id:
         return jsonify({'status': 'error', 'message': 'Faltan datos'}), 400
+
+    if check_banned():
+        return jsonify({'status': 'error', 'message': 'Tu cuenta está suspendida. No puedes seguir oraciones.'}), 403
 
     if not check_permission(user_id):
         return jsonify({'status': 'error', 'message': 'No autorizado'}), 403

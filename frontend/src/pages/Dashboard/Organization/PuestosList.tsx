@@ -5,7 +5,7 @@ import { useDashboard } from '../../../context/DashboardContext';
 import type { Puesto } from '../../../types/apiTypes';
 
 const PuestosList: React.FC = () => {
-  const { users, areas, roles, loadingData } = useDashboard();
+  const { users, areas, loadingData } = useDashboard();
   const [puestos, setPuestos] = useState<Puesto[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -16,7 +16,6 @@ const PuestosList: React.FC = () => {
   // Form states
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [selectedAreaId, setSelectedAreaId] = useState<number | null>(null);
-  const [selectedRolId, setSelectedRolId] = useState<number | null>(null);
   const [userSearch, setUserSearch] = useState('');
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
 
@@ -42,15 +41,14 @@ const PuestosList: React.FC = () => {
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!selectedUserId || !selectedAreaId || !selectedRolId) {
-      toast.error('Debes seleccionar Usuario, Área y Rol');
+    if (!selectedUserId || !selectedAreaId) {
+      toast.error('Debes seleccionar Usuario y Área');
       return;
     }
 
     const payload = {
       id_user: selectedUserId,
       id_area: selectedAreaId,
-      id_rol: selectedRolId,
       requiere_confirmacion: (e.currentTarget.elements.namedItem('requiere_confirmacion') as HTMLInputElement).checked ? 1 : 0,
       estado: (e.currentTarget.elements.namedItem('estado') as HTMLSelectElement).value === '1' ? 1 : 0
     };
@@ -84,12 +82,10 @@ const PuestosList: React.FC = () => {
 
   const getUserName = (id: number) => users.find(u => u.id === id)?.username || `User #${id}`;
   const getAreaName = (id: number) => areas.find(a => a.id === id)?.nombre || `Area #${id}`;
-  const getRolName = (id: number) => roles.find(r => r.id === id)?.nombre || `Rol #${id}`;
 
   const filtered = puestos.filter(p => 
     getUserName(p.id_user).toLowerCase().includes(searchTerm.toLowerCase()) ||
-    getAreaName(p.id_area).toLowerCase().includes(searchTerm.toLowerCase()) ||
-    getRolName(p.id_rol).toLowerCase().includes(searchTerm.toLowerCase())
+    getAreaName(p.id_area).toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -100,7 +96,6 @@ const PuestosList: React.FC = () => {
           setEditingPuesto(null); 
           setSelectedUserId(null); 
           setSelectedAreaId(null); 
-          setSelectedRolId(null); 
           setShowModal(true); 
         }} className="bg-church-terracotta text-white px-4 py-2 rounded-md hover:bg-church-terracotta/90 transition-colors shadow-sm font-bold text-sm">
           + Asignar Puesto
@@ -124,7 +119,6 @@ const PuestosList: React.FC = () => {
             <tr>
               <th className="px-6 py-4">Usuario</th>
               <th className="px-6 py-4">Ministerio / Área</th>
-              <th className="px-6 py-4">Rol Específico</th>
               <th className="px-6 py-4 text-center">Estado</th>
               <th className="px-6 py-4 text-center">Acciones</th>
             </tr>
@@ -143,9 +137,6 @@ const PuestosList: React.FC = () => {
                 <td className="px-6 py-4 uppercase text-xs font-bold text-purple-700">
                   <span className="bg-purple-50 px-2 py-1 rounded border border-purple-100">{getAreaName(p.id_area)}</span>
                 </td>
-                <td className="px-6 py-4 uppercase text-xs font-bold text-church-olive">
-                  <span className="bg-church-beige px-2 py-1 rounded border border-church-olive/10">{getRolName(p.id_rol)}</span>
-                </td>
                 <td className="px-6 py-4 text-center">
                   <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${p.estado === 1 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                     {p.estado === 1 ? 'Activo' : 'Inactivo'}
@@ -156,7 +147,6 @@ const PuestosList: React.FC = () => {
                     setEditingPuesto(p); 
                     setSelectedUserId(p.id_user); 
                     setSelectedAreaId(p.id_area); 
-                    setSelectedRolId(p.id_rol); 
                     setShowModal(true); 
                   }} className="text-blue-500 hover:text-blue-700">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
@@ -209,20 +199,12 @@ const PuestosList: React.FC = () => {
                 )}
               </div>
 
-              {/* Selección de Ministerio y Rol */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Ministerio / Área</label>
                   <select required value={selectedAreaId || ''} onChange={e => setSelectedAreaId(Number(e.target.value))} className="w-full px-3 py-2 border rounded-md focus:ring-church-olive text-sm bg-white">
                     <option value="">Seleccionar área...</option>
                     {areas.map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Rol Específico</label>
-                  <select required value={selectedRolId || ''} onChange={e => setSelectedRolId(Number(e.target.value))} className="w-full px-3 py-2 border rounded-md focus:ring-church-olive text-sm bg-white">
-                    <option value="">Seleccionar rol...</option>
-                    {roles.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
                   </select>
                 </div>
               </div>

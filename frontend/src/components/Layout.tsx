@@ -78,17 +78,22 @@ const Layout: React.FC = () => {
           <div className="flex items-center space-x-6">
             {isAuthenticated ? (
               <div className="flex items-center space-x-4">
-                <div className="hidden sm:flex flex-col items-end mr-1">
+                <Link to="/perfil" className="hidden sm:flex flex-col items-end mr-1 group-hover:opacity-80 transition-opacity">
                   <span className={`text-xs font-bold ${isDarkNav ? 'text-gray-900' : 'text-white'}`}>{user?.username}</span>
                   <span className={`text-[10px] ${isDarkNav ? 'text-gray-500' : 'text-white/70'}`}>{user?.email}</span>
-                </div>
-                {user?.avatar ? (
-                  <img src={user.avatar} alt="Avatar" className="w-9 h-9 rounded-full border border-gray-100 object-cover" />
-                ) : (
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold border transition-colors ${isDarkNav ? 'bg-church-olive text-white border-church-olive' : 'bg-white/20 text-white border-white/30'}`}>
-                    {user?.username?.charAt(0).toUpperCase()}
+                </Link>
+                <Link to="/perfil" className="relative group/avatar">
+                  {user?.avatar ? (
+                    <img src={user.avatar} alt="Avatar" className="w-9 h-9 rounded-full border border-gray-100 object-cover transition-transform group-hover/avatar:scale-110" />
+                  ) : (
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold border transition-all group-hover/avatar:scale-110 ${isDarkNav ? 'bg-church-olive text-white border-church-olive' : 'bg-white/20 text-white border-white/30'}`}>
+                      {user?.username?.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="absolute -bottom-1 -right-1 bg-church-terracotta text-white rounded-full p-0.5 opacity-0 group-hover/avatar:opacity-100 transition-opacity shadow-sm">
+                    <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                   </div>
-                )}
+                </Link>
                 <button
                   onClick={handleLogout}
                   className={`text-xs font-bold uppercase tracking-widest px-4 py-2 rounded transition-all border ${isDarkNav ? 'text-church-dark border-gray-300 hover:bg-gray-50' : 'text-white border-white/30 hover:bg-white/10'}`}

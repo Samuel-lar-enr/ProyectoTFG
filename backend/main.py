@@ -78,8 +78,8 @@ def daily_prayer_notifications():
         from models import Usuario, OracionRecordatorio, Oracion
         from flask_mailman import EmailMessage
 
-        # Buscamos todos los usuarios que tengan al menos un recordatorio
-        users_with_reminders = Usuario.query.join(OracionRecordatorio).all()
+        # Buscamos todos los usuarios que tengan al menos un recordatorio y que acepten notificaciones
+        users_with_reminders = Usuario.query.join(OracionRecordatorio).filter(Usuario.notificaciones == 1).all()
         
         for user in users_with_reminders:
             # Obtener oraciones recordadas por este usuario (que sigan activas)
@@ -115,6 +115,48 @@ scheduler.add_job(id='clean_prayers', func=clean_expired_oraciones, trigger='int
 
 # Ejecutar notificación diaria (ej: cada 24 horas)
 scheduler.add_job(id='daily_notifications', func=daily_prayer_notifications, trigger='interval', hours=24)
+
+def event_reminder_notifications():
+    with app.app_context():
+        print(f"[{datetime.now()}] Iniciando envío de recordatorios de eventos...")
+        from models import ReservaEvento, Evento, Usuario
+        from flask_mailman import EmailMessage
+        
+        # Obtenemos el inicio y fin del día de MAÑANA
+        tomorrow = datetime.utcnow().date() + timedelta(days=1)
+        start_tomorrow = datetime.combine(tomorrow, datetime.min.time())
+        end_tomorrow = datetime.combine(tomorrow, datetime.max.time())
+
+        # Buscamos eventos que empiecen mañana y tengan reservas activas
+        tomorrow_events = Evento.query.filter(
+            Evento.fecha_inicio >= start_tomorrow,
+            Evento.fecha_inicio <= end_tomorrow,
+            Evento.estado == 1
+        ).all()
+
+        for event in tomorrow_events:
+            # Para cada evento, enviamos a todos los que reservaron
+            active_reservations = ReservaEvento.query.filter_by(id_evento=event.id, estado=1).all()
+            for res in active_reservations:
+                user = res.usuario
+                if not user or not user.email or not user.notificaciones: continue
+
+                subject = f"🔔 Recordatorio: Mañana es el evento {event.titulo}"
+                body = f"Hola {user.username},\n\nTe recordamos que tienes una reserva para asistir mañana al evento:\n\n"
+                body += f"📍 Evento: {event.titulo}\n"
+                body += f"⏰ Hora: {event.fecha_inicio.strftime('%H:%M')}\n"
+                body += f"📝 Descripción: {event.descripcion or 'Sin descripción'}\n\n"
+                body += "¡Te esperamos con alegría!\nTu Iglesia Online"
+
+                try:
+                    msg = EmailMessage(subject, body, os.getenv('MAIL_DEFAULT_SENDER'), [user.email])
+                    msg.send()
+                    print(f"Recordatorio de evento enviado a {user.email}")
+                except Exception as e:
+                    print(f"Error enviando recordatorio a {user.email}: {e}")
+
+# Ejecutar recordatorios de eventos cada 24 horas
+scheduler.add_job(id='event_reminders', func=event_reminder_notifications, trigger='interval', hours=24)
 
 # Login Manager
 login_manager = LoginManager()

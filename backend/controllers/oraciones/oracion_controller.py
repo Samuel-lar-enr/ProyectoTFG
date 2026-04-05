@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from models import db, Oracion
-from services.auth_service import check_permission
+from services.auth_service import check_permission, check_banned
 
 oracion_bp = Blueprint('oracion', __name__)
 
@@ -20,6 +20,9 @@ def get_oracion(id):
 def create_oracion():
     data = request.get_json()
     user_id = data.get('id_user')
+
+    if check_banned():
+        return jsonify({'status': 'error', 'message': 'Tu cuenta está suspendida. No puedes publicar oraciones'}), 403
 
     if not check_permission(user_id):
         return jsonify({'status': 'error', 'message': 'No tienes permiso para crear este recurso para este usuario'}), 403
@@ -93,6 +96,24 @@ def delete_oracion(id):
         db.session.delete(oracion)
         db.session.commit()
         return jsonify({'status': 'success', 'message': 'Oracion eliminada'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'status': 'error', 'message': str(e)}), 400
+
+
+@oracion_bp.route('/<int:id>/reanudar', methods=['POST'])
+def reanudar_oracion(id):
+    from datetime import datetime
+    oracion = Oracion.query.get_or_404(id)
+
+    if not check_permission(oracion.id_user):
+        return jsonify({'status': 'error', 'message': 'No tienes permiso para reanudar esta oración'}), 403
+
+    try:
+        oracion.fecha_creacion = datetime.utcnow()
+        oracion.estado = 1
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': 'Oración reanudada correctamente', 'oracion': oracion.to_dict()}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'status': 'error', 'message': str(e)}), 400

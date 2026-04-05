@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from models import db, ReservaEvento
-from services.auth_service import check_permission
+from services.auth_service import check_permission, check_banned
 
 reserva_evento_bp = Blueprint('reserva_evento', __name__)
 
@@ -17,22 +17,42 @@ def get_reserva(id):
 
 
 @reserva_evento_bp.route('/', methods=['POST'])
-def create_reserva():
+def toggle_reserva():
     data = request.get_json()
     user_id = data.get('id_user')
+    evento_id = data.get('id_evento')
+
+    if check_banned():
+        return jsonify({'status': 'error', 'message': 'Tu cuenta está suspendida. No puedes reservar eventos.'}), 403
 
     if not check_permission(user_id):
-        return jsonify({'status': 'error', 'message': 'No tienes permiso para crear este recurso para este usuario'}), 403
+        return jsonify({'status': 'error', 'message': 'No tienes permiso'}), 403
 
     try:
+        from models import Evento
+        evento = Evento.query.get_or_404(evento_id)
+        
+        # Check if already exists
+        reserva = ReservaEvento.query.filter_by(id_user=user_id, id_evento=evento_id).first()
+        
+        if reserva:
+            db.session.delete(reserva)
+            db.session.commit()
+            return jsonify({'status': 'success', 'message': 'Reserva cancelada', 'action': 'removed'}), 200
+        
+        # Check capacity
+        active_reservas = ReservaEvento.query.filter_by(id_evento=evento_id, estado=1).count()
+        if evento.aforo_max and active_reservas >= evento.aforo_max:
+            return jsonify({'status': 'error', 'message': 'El evento está lleno'}), 400
+
         new_reserva = ReservaEvento(
             id_user=user_id,
-            id_evento=data['id_evento'],
-            estado=data.get('estado', 1)
+            id_evento=evento_id,
+            estado=1
         )
         db.session.add(new_reserva)
         db.session.commit()
-        return jsonify({'status': 'success', 'message': 'Reserva realizada', 'id': new_reserva.id}), 201
+        return jsonify({'status': 'success', 'message': 'Reserva realizada', 'action': 'added'}), 201
     except Exception as e:
         db.session.rollback()
         return jsonify({'status': 'error', 'message': str(e)}), 400

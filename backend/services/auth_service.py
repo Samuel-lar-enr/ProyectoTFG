@@ -12,11 +12,6 @@ def check_permission(owner_id=None):
     if not current_user.is_authenticated:
         return False
 
-    # Check for Admin (1) or Pastor (2) roles
-    # Assuming get_roles returns list of role names or objects, but here we check IDs via relationship
-    # Let's check IDs directly from the relationship to be consistent with previous logic
-    # Previous logic: roles = UsuarioRol.query.filter_by(id_user=req_id).all(); role_ids = [r.id_rol for r in roles]
-    
     # Efficient way:
     role_ids = [rol.id for rol in current_user.roles]
     
@@ -31,5 +26,67 @@ def check_permission(owner_id=None):
                 return True
         except ValueError:
             pass
+        
+    return False
+
+def check_banned():
+    """
+    Returns True if the current user is banned (estado == 3).
+    Banned users can only read, not write.
+    """
+    if not current_user.is_authenticated:
+        return False
+    return getattr(current_user, 'estado', 1) == 3
+
+def has_area_permission(area_id):
+    """
+    Checks if current_user can manage/create things in a specific area.
+    Granted if:
+    1. Is Admin (1) or Pastor (2)
+    2. Has a Puesto in that area (id_area)
+    """
+    if not current_user.is_authenticated:
+        return False
+    
+    # 1. Check global roles
+    role_ids = [rol.id for rol in current_user.roles]
+    if 1 in role_ids or 2 in role_ids:
+        return True
+    
+    # 2. Check Puesto in area
+    if area_id is None:
+        return False
+        
+    try:
+        target_area_id = int(area_id)
+        user_areas = [p.id_area for p in current_user.puestos if p.estado == 1]
+        if target_area_id in user_areas:
+            return True
+    except (ValueError, TypeError):
+        pass
+        
+    return False
+
+def needs_event_confirmation(area_id):
+    """
+    Returns True if current_user's events in this area MUST be confirmed by an admin.
+    Admins/Pastors NEVER need confirmation.
+    """
+    if not current_user.is_authenticated:
+        return False
+    
+    # 1. Admins/Pastors are trusted
+    role_ids = [rol.id for rol in current_user.roles]
+    if 1 in role_ids or 2 in role_ids:
+        return False
+    
+    # 2. Check if any Puesto in this area requires confirmation
+    try:
+        target_area_id = int(area_id)
+        for p in current_user.puestos:
+            if p.id_area == target_area_id and p.estado == 1:
+                return p.requiere_confirmacion # If True, requires confirmation
+    except (ValueError, TypeError):
+        pass
         
     return False
