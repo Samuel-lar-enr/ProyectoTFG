@@ -15,6 +15,15 @@ from datetime import datetime, timedelta
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 app = Flask(__name__)
+# Configuración de carpetas para subidas
+app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), 'uploads')
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB max
+
+# Asegurar que los directorios de subidas existen
+uploads_dir = app.config['UPLOAD_FOLDER']
+os.makedirs(os.path.join(uploads_dir, 'avatars'), exist_ok=True)
+os.makedirs(os.path.join(uploads_dir, 'blogs'), exist_ok=True)
+
 # Permitir tanto localhost como 127.0.0.1 para evitar bloqueos de CORS en Chrome/Edge
 CORS(app, supports_credentials=True, origins=[
     'http://localhost:5173',
@@ -295,6 +304,13 @@ def api_index():
     }
 
     return jsonify(api_map)
+
+from flask import send_from_directory
+
+@app.route('/uploads/<path:filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
 
 @app.route('/api/health', methods=['GET'])
 def health_check():

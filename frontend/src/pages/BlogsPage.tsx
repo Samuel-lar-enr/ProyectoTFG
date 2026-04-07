@@ -4,6 +4,7 @@ import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 import { useDashboard } from '../context/DashboardContext';
+import { getImageUrl } from '../utils/imageUtils';
 
 interface Blog {
   id: number;
@@ -71,7 +72,7 @@ const RenderComment: React.FC<RenderCommentProps> = ({
         <div className="flex items-center space-x-3">
           <div className={`${level === 0 ? 'w-10 h-10' : 'w-8 h-8'} rounded-xl bg-gray-100 shrink-0 flex items-center justify-center overflow-hidden`}>
             {comment.avatar ? (
-              <img src={comment.avatar} alt={comment.username} className="w-full h-full object-cover" />
+              <img src={getImageUrl(comment.avatar)} alt={comment.username} className="w-full h-full object-cover" />
             ) : (
               <span className={`font-bold text-church-olive ${level === 0 ? 'text-base' : 'text-xs'}`}>
                 {comment.username.charAt(0).toUpperCase()}
@@ -199,6 +200,20 @@ const BlogsPage: React.FC = () => {
     imagen: '',
     tags: [] as string[]
   });
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
   
   const blogTags = allTags.filter(t => t.tipo === 'blog');
 
@@ -261,16 +276,30 @@ const BlogsPage: React.FC = () => {
     if (!user) return toast.error('Inicia sesión para publicar');
 
     try {
+      const formDataToSend = new FormData();
+      formDataToSend.append('id_user', String(user.id));
+      formDataToSend.append('titulo', blogData.titulo);
+      formDataToSend.append('contenido', blogData.contenido);
+      formDataToSend.append('tags', JSON.stringify(blogData.tags));
+      
+      if (selectedFile) {
+        formDataToSend.append('file', selectedFile);
+      } else {
+        formDataToSend.append('imagen', blogData.imagen);
+      }
+
       if (editingBlog) {
-        await api.put(`/blogs/${editingBlog.id}`, { ...blogData, id_user: user.id });
+        await api.put(`/blogs/${editingBlog.id}`, formDataToSend);
         toast.success('Entrada de blog actualizada');
       } else {
-        await api.post('/blogs/', { ...blogData, id_user: user.id });
+        await api.post('/blogs/', formDataToSend);
         toast.success('Entrada de blog publicada');
       }
       setShowModal(false);
       setEditingBlog(null);
       setBlogData({ titulo: '', contenido: '', imagen: '', tags: [] });
+      setSelectedFile(null);
+      setPreviewUrl(null);
       fetchBlogs();
     } catch (error) {
       toast.error('Error al procesar el blog');
@@ -446,7 +475,7 @@ const BlogsPage: React.FC = () => {
               <article key={b.id} onClick={() => setViewingBlog(b)} className="group cursor-pointer flex flex-col transition-all hover:translate-y-[-4px]">
                 {b.imagen && (
                   <div className="aspect-video w-full rounded-3xl overflow-hidden mb-6 shadow-xl relative">
-                    <img src={b.imagen} alt={b.titulo} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                    <img src={getImageUrl(b.imagen)} alt={b.titulo} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                     <div className="absolute inset-0 bg-linear-to-t from-black/20 to-transparent" />
                   </div>
                 )}
@@ -500,7 +529,7 @@ const BlogsPage: React.FC = () => {
                 <h1 className="text-4xl md:text-7xl font-serif text-church-olive mb-8 leading-tight italic">{viewingBlog.titulo}</h1>
                 {viewingBlog.imagen && (
                   <div className="aspect-video w-full rounded-3xl overflow-hidden mb-12 shadow-2xl">
-                    <img src={viewingBlog.imagen} alt={viewingBlog.titulo} className="w-full h-full object-cover" />
+                    <img src={getImageUrl(viewingBlog.imagen)} alt={viewingBlog.titulo} className="w-full h-full object-cover" />
                   </div>
                 )}
                 <div className="flex items-center space-x-4 border-t border-gray-100 pt-8">
@@ -556,8 +585,19 @@ const BlogsPage: React.FC = () => {
                 <input required type="text" className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-church-terracotta text-xl" placeholder="Escribe algo inspirador..." value={blogData.titulo} onChange={e => setBlogData({...blogData, titulo: e.target.value})} />
               </div>
               <div>
-                <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Imagen de Portada (URL)</label>
-                <input type="text" className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-church-terracotta text-sm" placeholder="URL de la imagen (Unsplash, etc...)" value={blogData.imagen} onChange={e => setBlogData({...blogData, imagen: e.target.value})} />
+                <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Imagen de Portada</label>
+                <div className="flex items-center space-x-4">
+                    <label className="cursor-pointer bg-church-olive text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-church-olive/80 transition-all">
+                        Seleccionar Archivo
+                        <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+                    </label>
+                    {selectedFile && <span className="text-[9px] text-gray-500 truncate max-w-[150px]">{selectedFile.name}</span>}
+                    {(previewUrl || blogData.imagen) && (
+                        <div className="w-16 h-10 rounded-lg overflow-hidden border border-gray-200">
+                            <img src={previewUrl || getImageUrl(blogData.imagen)} className="w-full h-full object-cover" alt="Preview" />
+                        </div>
+                    )}
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Contenido</label>

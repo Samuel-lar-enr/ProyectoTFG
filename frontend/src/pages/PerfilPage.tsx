@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { toast } from 'sonner';
+import { getImageUrl } from '../utils/imageUtils';
 
 type ActivityTab = 'reservas' | 'blogs' | 'oraciones' | 'siguiendo';
 
@@ -20,6 +21,8 @@ const PerfilPage: React.FC = () => {
     notificaciones: user?.notificaciones || false,
     newPassword: ''
   });
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   if (!user) return null;
 
@@ -41,23 +44,42 @@ const PerfilPage: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const payload: any = {
-        username: formData.username,
-        email: formData.email,
-        avatar: formData.avatar,
-        notificaciones: formData.notificaciones
-      };
-      if (formData.newPassword) {
-        payload.password = formData.newPassword;
+      const formDataToSend = new FormData();
+      formDataToSend.append('username', formData.username);
+      formDataToSend.append('email', formData.email);
+      formDataToSend.append('notificaciones', String(formData.notificaciones));
+      
+      if (selectedFile) {
+        formDataToSend.append('file', selectedFile);
+      } else {
+        formDataToSend.append('avatar', formData.avatar);
       }
 
-      await api.put(`/usuarios/${user.id}`, payload);
+      if (formData.newPassword) {
+        formDataToSend.append('password', formData.newPassword);
+      }
+
+      await api.put(`/usuarios/${user.id}`, formDataToSend);
       await refreshUser();
       toast.success('¡Perfil actualizado correctamente!');
+      setSelectedFile(null);
+      setPreviewUrl(null);
     } catch (error) {
       toast.error('Error al actualizar perfil');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -71,8 +93,8 @@ const PerfilPage: React.FC = () => {
             <div className="bg-white rounded-[2.5rem] p-10 shadow-xl border border-gray-100 text-center relative overflow-hidden">
                <div className="absolute top-0 left-0 w-full h-32 bg-church-olive/10" />
                <div className="relative mt-8">
-                 {user.avatar ? (
-                    <img src={user.avatar} alt="Avatar" className="w-32 h-32 rounded-full mx-auto border-4 border-white shadow-lg object-cover" />
+                 {previewUrl || user.avatar ? (
+                    <img src={previewUrl || getImageUrl(user.avatar) || ''} alt="Avatar" className="w-32 h-32 rounded-full mx-auto border-4 border-white shadow-lg object-cover" />
                  ) : (
                     <div className="w-32 h-32 rounded-full mx-auto bg-church-olive text-white flex items-center justify-center text-4xl font-serif border-4 border-white shadow-lg">
                         {user.username.charAt(0).toUpperCase()}
@@ -99,8 +121,14 @@ const PerfilPage: React.FC = () => {
                     <input className="form-input bg-gray-50 border-transparent focus:bg-white" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
                   </div>
                   <div className="form-group">
-                    <label className="form-label text-[10px]">URL de Avatar (Imagen)</label>
-                    <input className="form-input bg-gray-50 border-transparent focus:bg-white" value={formData.avatar} onChange={e => setFormData({...formData, avatar: e.target.value})} placeholder="https://..." />
+                    <label className="form-label text-[10px]">Imagen de Perfil</label>
+                    <div className="mt-1 flex items-center space-x-3">
+                        <label className="cursor-pointer bg-church-olive text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-church-olive/80 transition-all">
+                            Seleccionar Archivo
+                            <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+                        </label>
+                        {selectedFile && <span className="text-[9px] text-gray-500 truncate max-w-[150px]">{selectedFile.name}</span>}
+                    </div>
                   </div>
                   <div className="form-group">
                     <label className="form-label text-[10px]">Nueva Contraseña (opcional)</label>

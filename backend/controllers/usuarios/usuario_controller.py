@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from models import db, Usuario, Rol
 from services.auth_service import check_permission
+from services.file_service import save_image, delete_image
 
 usuario_bp = Blueprint('usuario', __name__)
 
@@ -43,23 +44,51 @@ def update_usuario(id):
     if not check_permission(id):
         return jsonify({'status': 'error', 'message': 'No tienes permiso para actualizar este usuario'}), 403
 
-    data = request.get_json()
-    print(f"DEBUG: Updating user {id} with data: {data}")
+    if request.is_json:
+        data = request.get_json()
+    else:
+        data = request.form
+
     try:
         if 'username' in data:
             usuario.username = data['username']
         if 'email' in data:
             usuario.email = data['email']
-        if 'avatar' in data:
-            usuario.avatar = data['avatar']
+        
+        # Manejo de avatar
+        if 'file' in request.files:
+            # Borrar avatar anterior si existía y era local
+            if usuario.avatar and usuario.avatar.startswith('/uploads/'):
+                delete_image(usuario.avatar)
+            usuario.avatar = save_image(request.files['file'], folder='avatars')
+        elif 'avatar' in data:
+            # Si mandan avatar como string, actualizamos (puede ser URL externa o null)
+            if data['avatar'] != usuario.avatar:
+                if usuario.avatar and usuario.avatar.startswith('/uploads/'):
+                    delete_image(usuario.avatar)
+                usuario.avatar = data['avatar']
+
         if 'password' in data and data['password']:
             usuario.set_password(data['password'])
         if 'notificaciones' in data:
-            usuario.notificaciones = data['notificaciones']
+            # En multipart, el booleano puede venir como string 'true'/'false'
+            val = data['notificaciones']
+            if isinstance(val, str):
+                usuario.notificaciones = val.lower() == 'true'
+            else:
+                usuario.notificaciones = bool(val)
             
         if 'roles' in data:
+            import json
+            roles_data = data['roles']
+            if isinstance(roles_data, str):
+                try:
+                    roles_data = json.loads(roles_data)
+                except:
+                    roles_data = [r.strip() for r in roles_data.split(',')]
+            
             roles_names = []
-            for r in data['roles']:
+            for r in roles_data:
                 if isinstance(r, dict) and 'nombre' in r:
                     roles_names.append(r['nombre'])
                 elif isinstance(r, str):
@@ -73,7 +102,6 @@ def update_usuario(id):
         return jsonify({'status': 'success', 'message': 'Usuario actualizado'}), 200
     except Exception as e:
         db.session.rollback()
-        print(f"ERROR updating user: {str(e)}")
         return jsonify({'status': 'error', 'message': f"Error al actualizar: {str(e)}"}), 400
 
 @usuario_bp.route('/<int:id>', methods=['DELETE'])

@@ -1,6 +1,8 @@
 from flask import Blueprint, request, jsonify
 from models import db, Blog
 from services.auth_service import check_permission, check_banned
+from services.file_service import save_image, delete_image
+import json
 
 blog_bp = Blueprint('blog', __name__)
 
@@ -24,7 +26,19 @@ def get_blog(id):
 
 @blog_bp.route('/', methods=['POST'])
 def create_blog():
-    data = request.get_json()
+    # Comprobar si es multipart o json
+    if request.is_json:
+        data = request.get_json()
+        image_url = data.get('imagen')
+    else:
+        data = request.form
+        # Si hay un archivo, lo guardamos
+        image_url = None
+        if 'file' in request.files:
+            image_url = save_image(request.files['file'], folder='blogs')
+        elif 'imagen' in data:
+            image_url = data.get('imagen')
+
     user_id = data.get('id_user')
     
     if check_banned():
@@ -38,13 +52,21 @@ def create_blog():
             id_user=user_id,
             titulo=data['titulo'],
             contenido=data['contenido'],
-            imagen=data.get('imagen'),
+            imagen=image_url,
             estado=data.get('estado', 1)
         )
         
         if 'tags' in data:
             from models import Tag
-            tags = Tag.query.filter(Tag.nombre.in_(data['tags'])).all()
+            # Tags pueden venir como string JSON en multipart o como lista en JSON
+            tags_data = data['tags']
+            if isinstance(tags_data, str):
+                try:
+                    tags_data = json.loads(tags_data)
+                except:
+                    tags_data = [t.strip() for t in tags_data.split(',')]
+            
+            tags = Tag.query.filter(Tag.nombre.in_(tags_data)).all()
             new_blog.tags = tags
             
         db.session.add(new_blog)
@@ -52,6 +74,9 @@ def create_blog():
         return jsonify({'status': 'success', 'message': 'Post de blog creado', 'id': new_blog.id}), 201
     except Exception as e:
         db.session.rollback()
+        # Si hubo error y subimos una imagen, borrarla
+        if image_url and image_url.startswith('/uploads/'):
+            delete_image(image_url)
         return jsonify({'status': 'error', 'message': str(e)}), 400
 
 @blog_bp.route('/<int:id>', methods=['PUT', 'PATCH'])
@@ -60,21 +85,44 @@ def update_blog(id):
     if not check_permission(blog.id_user):
         return jsonify({'status': 'error', 'message': 'No tienes permiso para editar este recurso'}), 403
     
-    data = request.get_json()
+    if request.is_json:
+        data = request.get_json()
+    else:
+        data = request.form
+
     try:
         if 'titulo' in data:
             blog.titulo = data['titulo']
         if 'contenido' in data:
             blog.contenido = data['contenido']
-        if 'imagen' in data:
-            blog.imagen = data['imagen']
+        
+        # Manejo de imagen
+        if 'file' in request.files:
+            # Borrar imagen anterior si existía y era local
+            if blog.imagen:
+                delete_image(blog.imagen)
+            blog.imagen = save_image(request.files['file'], folder='blogs')
+        elif 'imagen' in data:
+            # Si mandan imagen como string, actualizamos (puede ser URL externa o null)
+            # Solo borramos la anterior si la nueva es diferente
+            if data['imagen'] != blog.imagen:
+                if blog.imagen:
+                    delete_image(blog.imagen)
+                blog.imagen = data['imagen']
+
         if 'estado' in data:
             blog.estado = data['estado']
         if 'id_user' in data:
             blog.id_user = data['id_user']
         if 'tags' in data:
             from models import Tag
-            tags = Tag.query.filter(Tag.nombre.in_(data['tags'])).all()
+            tags_data = data['tags']
+            if isinstance(tags_data, str):
+                try:
+                    tags_data = json.loads(tags_data)
+                except:
+                    tags_data = [t.strip() for t in tags_data.split(',')]
+            tags = Tag.query.filter(Tag.nombre.in_(tags_data)).all()
             blog.tags = tags
         
         db.session.commit()

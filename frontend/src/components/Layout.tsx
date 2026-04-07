@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate, Outlet, useLocation } from 'react-router-dom';
+import { getImageUrl } from '../utils/imageUtils';
+
 
 const Layout: React.FC = () => {
   const { user, logout, isAuthenticated } = useAuth();
@@ -35,10 +37,11 @@ const Layout: React.FC = () => {
             </Link>
             <nav className="hidden md:flex space-x-8">
               <Link to="/" className={`text-sm font-semibold transition-colors uppercase tracking-wider ${isDarkNav ? 'text-gray-700 hover:text-church-terracotta' : 'text-white/90 hover:text-white'}`}>Inicio</Link>
+              <Link to="/blog" className={`text-sm font-semibold transition-colors uppercase tracking-wider ${isDarkNav ? 'text-gray-700 hover:text-church-terracotta' : 'text-white/90 hover:text-white'}`}>Blogs</Link>
+              <Link to="/eventos" className={`text-sm font-semibold transition-colors uppercase tracking-wider ${isDarkNav ? 'text-gray-700 hover:text-church-terracotta' : 'text-white/90 hover:text-white'}`}>Eventos</Link>
+              
               {isAuthenticated && (
                 <>
-                  <Link to="/blog" className={`text-sm font-semibold transition-colors uppercase tracking-wider ${isDarkNav ? 'text-gray-700 hover:text-church-terracotta' : 'text-white/90 hover:text-white'}`}>Blogs</Link>
-                  <Link to="/eventos" className={`text-sm font-semibold transition-colors uppercase tracking-wider ${isDarkNav ? 'text-gray-700 hover:text-church-terracotta' : 'text-white/90 hover:text-white'}`}>Eventos</Link>
                   <Link to="/oraciones" className={`text-sm font-semibold transition-colors uppercase tracking-wider ${isDarkNav ? 'text-gray-700 hover:text-church-terracotta' : 'text-white/90 hover:text-white'}`}>Oraciones</Link>
                   
                   {/* Dashboard Menu solo para Admin/Pastor */}
@@ -84,7 +87,7 @@ const Layout: React.FC = () => {
                 </Link>
                 <Link to="/perfil" className="relative group/avatar">
                   {user?.avatar ? (
-                    <img src={user.avatar} alt="Avatar" className="w-9 h-9 rounded-full border border-gray-100 object-cover transition-transform group-hover/avatar:scale-110" />
+                    <img src={getImageUrl(user.avatar)} alt="Avatar" className="w-9 h-9 rounded-full border border-gray-100 object-cover transition-transform group-hover/avatar:scale-110" />
                   ) : (
                     <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold border transition-all group-hover/avatar:scale-110 ${isDarkNav ? 'bg-church-olive text-white border-church-olive' : 'bg-white/20 text-white border-white/30'}`}>
                       {user?.username?.charAt(0).toUpperCase()}
