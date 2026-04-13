@@ -32,6 +32,11 @@ def toggle_reserva():
         from models import Evento
         evento = Evento.query.get_or_404(evento_id)
         
+        # Check if event is in the past
+        from datetime import datetime
+        if evento.fecha_inicio < datetime.utcnow():
+            return jsonify({'status': 'error', 'message': 'No puedes reservar un evento que ya ha pasado.'}), 400
+        
         # Check if already exists
         reserva = ReservaEvento.query.filter_by(id_user=user_id, id_evento=evento_id).first()
         

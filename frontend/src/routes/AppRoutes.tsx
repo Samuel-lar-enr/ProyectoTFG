@@ -14,6 +14,7 @@ import OracionesPage from '../pages/OracionesPage';
 import BlogsPage from '../pages/BlogsPage';
 import PerfilPage from '../pages/PerfilPage';
 import EventosPage from '../pages/EventosPage';
+import AreaDetailPage from '../pages/AreaDetailPage';
 
 // Dashboard Components
 import DashboardLayout from '../pages/Dashboard/DashboardLayout';
@@ -58,6 +59,8 @@ const AppRoutes = () => {
             <PerfilPage />
           </ProtectedRoute>
         } />
+
+        <Route path="/area/:id" element={<AreaDetailPage />} />
 
         {/* Dashboard para Admin y Pastor */}
         <Route path="/dashboard" element={

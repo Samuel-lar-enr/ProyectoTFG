@@ -23,6 +23,7 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB max
 uploads_dir = app.config['UPLOAD_FOLDER']
 os.makedirs(os.path.join(uploads_dir, 'avatars'), exist_ok=True)
 os.makedirs(os.path.join(uploads_dir, 'blogs'), exist_ok=True)
+os.makedirs(os.path.join(uploads_dir, 'areas'), exist_ok=True)
 
 # Permitir tanto localhost como 127.0.0.1 para evitar bloqueos de CORS en Chrome/Edge
 CORS(app, supports_credentials=True, origins=[

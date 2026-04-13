@@ -408,19 +408,25 @@ const EventosPage: React.FC = () => {
                              {e.total_reservas} / {e.aforo_max} reservados
                            </div>
                            <button 
-                            onClick={() => e.estado === 1 && handleToggleReserva(e.id)}
-                            className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all shadow-sm active:scale-95 ${
+                            onClick={() => {
+                              const isPast = new Date(e.fecha_inicio) < new Date();
+                              if (isPast && !userReservas.includes(e.id)) return;
+                              if (e.estado === 1) handleToggleReserva(e.id);
+                            }}
+                             className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all shadow-sm active:scale-95 ${
                               e.estado === 2
                                 ? 'bg-amber-100/50 text-amber-500 border border-amber-100 cursor-not-allowed italic'
-                                : userReservas.includes(e.id)
-                                  ? 'bg-red-50 text-red-600 border border-red-100 hover:bg-red-600 hover:text-white'
-                                  : e.total_reservas >= e.aforo_max 
-                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                    : 'bg-church-olive text-white hover:bg-church-olive-dark'
+                                : (new Date(e.fecha_inicio) < new Date() && !userReservas.includes(e.id))
+                                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                  : userReservas.includes(e.id)
+                                    ? 'bg-red-50 text-red-600 border border-red-100 hover:bg-red-600 hover:text-white'
+                                    : e.total_reservas >= e.aforo_max 
+                                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                      : 'bg-church-olive text-white hover:bg-church-olive-dark'
                             }`}
-                            disabled={e.estado === 2 || (!userReservas.includes(e.id) && e.total_reservas >= e.aforo_max)}
+                            disabled={e.estado === 2 || (new Date(e.fecha_inicio) < new Date() && !userReservas.includes(e.id)) || (!userReservas.includes(e.id) && e.total_reservas >= e.aforo_max)}
                            >
-                             {e.estado === 2 ? 'Solo Lectura' : userReservas.includes(e.id) ? 'Anular Reserva' : e.total_reservas >= e.aforo_max ? 'Lleno' : 'Reservar Plaza'}
+                             {e.estado === 2 ? 'Solo Lectura' : (new Date(e.fecha_inicio) < new Date() && !userReservas.includes(e.id)) ? 'Finalizado' : userReservas.includes(e.id) ? 'Anular Reserva' : e.total_reservas >= e.aforo_max ? 'Lleno' : 'Reservar Plaza'}
                            </button>
                          </div>
                       </div>

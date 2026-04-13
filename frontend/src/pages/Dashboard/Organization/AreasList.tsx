@@ -2,10 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../../../services/api';
 import { toast } from 'sonner';
 
-interface Area {
-  id: number;
-  nombre: string;
-}
+import type { Area } from '../../../types/apiTypes';
 
 const AreasList: React.FC = () => {
   const [areas, setAreas] = useState<Area[]>([]);
@@ -37,14 +34,13 @@ const AreasList: React.FC = () => {
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const data = Object.fromEntries(formData.entries());
 
     try {
       if (editingArea) {
-        await api.put(`/areas/${editingArea.id}`, data);
+        await api.put(`/areas/${editingArea.id}`, formData);
         toast.success('Área actualizada');
       } else {
-        await api.post('/areas/', data);
+        await api.post('/areas/', formData);
         toast.success('Área creada');
       }
       setShowModal(false);
@@ -94,18 +90,20 @@ const AreasList: React.FC = () => {
             <tr>
               <th className="px-6 py-4">ID</th>
               <th className="px-6 py-4">Nombre del Área</th>
+              <th className="px-6 py-4">Resumen</th>
               <th className="px-6 py-4 text-center">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {loading ? (
-              <tr><td colSpan={3} className="px-6 py-8 text-center text-gray-500">Cargando...</td></tr>
+              <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-500">Cargando...</td></tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan={3} className="px-6 py-8 text-center text-gray-500 italic">No hay áreas configuradas.</td></tr>
+              <tr><td colSpan={4} className="px-6 py-8 text-center text-gray-500 italic">No hay áreas configuradas.</td></tr>
             ) : filtered.map(a => (
               <tr key={a.id} className="hover:bg-gray-50/50 transition-colors">
                 <td className="px-6 py-4 text-gray-400 font-mono">#{a.id}</td>
                 <td className="px-6 py-4 font-medium text-gray-900">{a.nombre}</td>
+                <td className="px-6 py-4 text-sm text-gray-500 truncate max-w-xs">{a.resumen || '-'}</td>
                 <td className="px-6 py-4 flex justify-center space-x-3">
                   <button onClick={() => { setEditingArea(a); setShowModal(true); }} className="text-blue-500 hover:text-blue-700 transition-colors">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
@@ -128,6 +126,23 @@ const AreasList: React.FC = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del Área</label>
                 <input required type="text" name="nombre" defaultValue={editingArea?.nombre} placeholder="Ej: Jóvenes, Alabanza..." className="w-full px-3 py-2 border rounded-md focus:ring-church-olive focus:border-church-olive shadow-sm" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Resumen (Hover)</label>
+                <input type="text" name="resumen" defaultValue={editingArea?.resumen} placeholder="Ej: Actividades para los más pequeños..." className="w-full px-3 py-2 border rounded-md focus:ring-church-olive focus:border-church-olive shadow-sm" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción Completa</label>
+                <textarea rows={3} name="descripcion" defaultValue={editingArea?.descripcion} placeholder="Detalles completos sobre el área..." className="w-full px-3 py-2 border rounded-md focus:ring-church-olive focus:border-church-olive shadow-sm"></textarea>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Imagen del Área (Opcional)</label>
+                <input type="file" name="imagen_file" accept="image/*" className="w-full px-3 py-2 border rounded-md focus:ring-church-olive focus:border-church-olive shadow-sm bg-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-church-terracotta file:text-white hover:file:bg-church-terracotta/90" />
+                {editingArea?.imagen && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Imagen actual: <a href={`http://localhost:5000${editingArea.imagen}`} target="_blank" rel="noreferrer" className="text-church-olive underline">Ver imagen</a>
+                  </p>
+                )}
               </div>
               <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-100">
                 <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md transition-colors font-medium">Cancelar</button>

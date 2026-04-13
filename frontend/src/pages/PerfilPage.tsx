@@ -23,6 +23,7 @@ const PerfilPage: React.FC = () => {
   });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [viewPastReservas, setViewPastReservas] = useState(false);
 
   if (!user) return null;
 
@@ -204,24 +205,59 @@ const PerfilPage: React.FC = () => {
 
                   {/* RESERVAS */}
                   {activeTab === 'reservas' && (
-                    <div className="grid md:grid-cols-2 gap-4">
-                      {!(user as any).mis_reservas || (user as any).mis_reservas.length === 0 ? (
-                        <p className="text-sm italic text-gray-400 col-span-2">No tienes reservas activas.</p>
-                      ) : (
-                        (user as any).mis_reservas?.map((res: any) => (
-                          <div
-                            key={res.id}
-                            onClick={() => navigate('/eventos')}
-                            className="p-4 rounded-2xl bg-church-beige/30 border border-transparent hover:border-church-olive/20 hover:bg-church-beige/60 cursor-pointer transition-all flex justify-between items-center group"
-                          >
-                            <div>
-                              <h5 className="text-sm font-bold text-church-olive group-hover:underline">{res.titulo_evento}</h5>
-                              <p className="text-[10px] text-gray-400">{new Date(res.fecha_evento).toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'long' })}</p>
-                            </div>
-                            <span className="px-2 py-1 bg-green-50 text-green-600 text-[8px] font-black uppercase rounded-lg shadow-sm">Confirmada</span>
-                          </div>
-                        ))
-                      )}
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center bg-church-beige/20 p-4 rounded-2xl border border-church-olive/5">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+                          {viewPastReservas ? 'Historial de Asistencia' : 'Próximos Eventos'}
+                        </span>
+                        <button 
+                          onClick={() => setViewPastReservas(!viewPastReservas)}
+                          className="text-[10px] font-bold text-church-terracotta hover:underline uppercase tracking-widest"
+                        >
+                          {viewPastReservas ? 'Ver Próximos' : 'Ver Pasados'}
+                        </button>
+                      </div>
+
+                      <div className="grid md:grid-cols-2 gap-4">
+                        {(() => {
+                          const now = new Date();
+                          const filtered = (user as any).mis_reservas?.filter((res: any) => {
+                            const eventDate = new Date(res.fecha_evento);
+                            return viewPastReservas ? eventDate < now : eventDate >= now;
+                          });
+
+                          if (!filtered || filtered.length === 0) {
+                            return <p className="text-sm italic text-gray-400 col-span-2 py-4">
+                              {viewPastReservas ? 'No tienes registros de asistencia pasados.' : 'No tienes próximas reservas.'}
+                            </p>;
+                          }
+
+                          return filtered.map((res: any) => {
+                            const isPast = new Date(res.fecha_evento) < now;
+                            return (
+                              <div
+                                key={res.id}
+                                onClick={() => navigate('/eventos')}
+                                className={`p-4 rounded-2xl border transition-all flex justify-between items-center group cursor-pointer ${
+                                  isPast 
+                                    ? 'bg-gray-50 border-gray-100 opacity-80' 
+                                    : 'bg-church-beige/30 border-transparent hover:border-church-olive/20 hover:bg-church-beige/60'
+                                }`}
+                              >
+                                <div>
+                                  <h5 className="text-sm font-bold text-church-olive group-hover:underline">{res.titulo_evento}</h5>
+                                  <p className="text-[10px] text-gray-400">{new Date(res.fecha_evento).toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'long' })}</p>
+                                </div>
+                                <span className={`px-2 py-1 text-[8px] font-black uppercase rounded-lg shadow-sm ${
+                                  isPast ? 'bg-gray-200 text-gray-600' : 'bg-green-50 text-green-600'
+                                }`}>
+                                  {isPast ? 'Asistido' : 'Confirmada'}
+                                </span>
+                              </div>
+                            );
+                          });
+                        })()}
+                      </div>
                     </div>
                   )}
 

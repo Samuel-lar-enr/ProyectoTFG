@@ -28,6 +28,13 @@ export interface Area {
   id: number;
   nombre: string;
   descripcion?: string;
+  resumen?: string;
+  imagen?: string;
+  usuarios?: {
+    id: number;
+    username: string;
+    avatar?: string;
+  }[];
 }
 
 export interface Tag {
@@ -91,11 +98,14 @@ export interface Evento {
   id: number;
   titulo: string;
   descripcion: string;
-  fecha: string;
-  ubicacion: string;
-  capacidad: number;
+  fecha_inicio: string;
+  fecha_fin?: string;
+  aforo_max?: number;
+  estado: number;
+  id_area: number;
+  id_user?: number;
   tags: string[];
-  id_area?: number;
+  total_reservas?: number;
 }
 
 export interface ReservaEvento {
@@ -156,6 +166,8 @@ export interface PostComentarioRequest {
 export interface PostAreaRequest {
   nombre: string;
   descripcion?: string;
+  resumen?: string;
+  imagen?: string;
 }
 
 export interface PostRolRequest {

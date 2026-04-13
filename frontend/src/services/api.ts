@@ -35,7 +35,7 @@ import type {
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
   headers: {
-    'Content-Type': 'application/json',
+    // Axios detectará automáticamente el Content-Type (JSON o Multipart)
   },
   withCredentials: true, // Fundamental para las sesiones de Flask
 });
@@ -191,6 +191,7 @@ export const prayerService = {
 export const adminService = {
   // Áreas
   getAreas: () => api.get<Area[]>('/areas').then(res => res.data),
+  getAreaById: (id: number) => api.get<Area>(`/areas/${id}`).then(res => res.data),
   createArea: (data: PostAreaRequest) => api.post<GenericResponse>('/areas', data).then(res => res.data),
   deleteArea: (id: number) => api.delete<GenericResponse>(`/areas/${id}`).then(res => res.data),
   

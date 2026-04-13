@@ -1,4 +1,7 @@
-from flask import Blueprint, request, jsonify
+import os
+import time
+from werkzeug.utils import secure_filename
+from flask import Blueprint, request, jsonify, current_app
 from models import db, Area
 from services.auth_service import check_permission
 
@@ -18,11 +21,23 @@ def get_area(id):
 
 @area_bp.route('/', methods=['POST'])
 def create_area():
-    data = request.get_json()
+    data = request.form if request.form else request.get_json()
+    imagen_url = data.get('imagen')
+    
+    if 'imagen_file' in request.files and request.files['imagen_file'].filename:
+        file = request.files['imagen_file']
+        filename = secure_filename(f"{int(time.time())}_{file.filename}")
+        areas_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'areas')
+        os.makedirs(areas_dir, exist_ok=True)
+        file.save(os.path.join(areas_dir, filename))
+        imagen_url = f"/uploads/areas/{filename}"
+        
     try:
         new_area = Area(
-            nombre=data['nombre'],
-            descripcion=data.get('descripcion')
+            nombre=data.get('nombre'),
+            descripcion=data.get('descripcion'),
+            resumen=data.get('resumen'),
+            imagen=imagen_url
         )
         db.session.add(new_area)
         db.session.commit()
@@ -37,12 +52,24 @@ def update_area(id):
     if not check_permission():
         return jsonify({'status': 'error', 'message': 'No tienes permiso para editar este recurso'}), 403
     
-    data = request.get_json()
+    data = request.form if request.form else request.get_json()
     try:
         if 'nombre' in data:
-            area.nombre = data['nombre']
+            area.nombre = data.get('nombre')
         if 'descripcion' in data:
-            area.descripcion = data['descripcion']
+            area.descripcion = data.get('descripcion')
+        if 'resumen' in data:
+            area.resumen = data.get('resumen')
+            
+        if 'imagen_file' in request.files and request.files['imagen_file'].filename:
+            file = request.files['imagen_file']
+            filename = secure_filename(f"{int(time.time())}_{file.filename}")
+            areas_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'areas')
+            os.makedirs(areas_dir, exist_ok=True)
+            file.save(os.path.join(areas_dir, filename))
+            area.imagen = f"/uploads/areas/{filename}"
+        elif 'imagen' in data:
+            area.imagen = data.get('imagen')
             
         db.session.commit()
         return jsonify({'status': 'success', 'message': 'Area actualizada'}), 200
