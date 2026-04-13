@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { toast } from 'sonner';
 import { getImageUrl } from '../utils/imageUtils';
+import { Button, Input, Card, Badge } from '../components/ui';
 
 type ActivityTab = 'reservas' | 'blogs' | 'oraciones' | 'siguiendo';
 
@@ -91,7 +92,7 @@ const PerfilPage: React.FC = () => {
           
           {/* Main Profile Info & Editing */}
           <div className="lg:col-span-1 space-y-8">
-            <div className="bg-white rounded-[2.5rem] p-10 shadow-xl border border-gray-100 text-center relative overflow-hidden">
+            <Card className="p-10 text-center relative overflow-hidden" hover={false}>
                <div className="absolute top-0 left-0 w-full h-32 bg-church-olive/10" />
                <div className="relative mt-8">
                  {previewUrl || user.avatar ? (
@@ -105,37 +106,45 @@ const PerfilPage: React.FC = () => {
                  <p className="text-sm text-gray-400 mt-1">{user.email}</p>
                  <div className="flex flex-wrap justify-center gap-2 mt-4">
                     {user.roles?.map((r: any) => (
-                        <span key={typeof r === 'string' ? r : r.nombre} className="px-3 py-1 bg-church-terracotta/10 text-church-terracotta text-[10px] font-black uppercase rounded-full tracking-widest">
+                        <Badge key={typeof r === 'string' ? r : r.nombre} variant="terracotta">
                             {typeof r === 'string' ? r : r.nombre}
-                        </span>
+                        </Badge>
                     ))}
                  </div>
                </div>
 
                <form onSubmit={handleUpdate} className="mt-12 text-left space-y-5">
+                  <Input 
+                    label="Nombre de Usuario" 
+                    value={formData.username} 
+                    onChange={e => setFormData({...formData, username: e.target.value})} 
+                  />
+                  <Input 
+                    label="Email" 
+                    value={formData.email} 
+                    onChange={e => setFormData({...formData, email: e.target.value})} 
+                  />
+                  
                   <div className="form-group">
-                    <label className="form-label text-[10px]">Nombre de Usuario</label>
-                    <input className="form-input bg-gray-50 border-transparent focus:bg-white" value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label text-[10px]">Email</label>
-                    <input className="form-input bg-gray-50 border-transparent focus:bg-white" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label text-[10px]">Imagen de Perfil</label>
+                    <label className="form-label">Imagen de Perfil</label>
                     <div className="mt-1 flex items-center space-x-3">
-                        <label className="cursor-pointer bg-church-olive text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-church-olive/80 transition-all">
+                        <label className="cursor-pointer bg-church-olive text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-church-olive-dark transition-all">
                             Seleccionar Archivo
                             <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
                         </label>
                         {selectedFile && <span className="text-[9px] text-gray-500 truncate max-w-[150px]">{selectedFile.name}</span>}
                     </div>
                   </div>
-                  <div className="form-group">
-                    <label className="form-label text-[10px]">Nueva Contraseña (opcional)</label>
-                    <input type="password" className="form-input bg-gray-50 border-transparent focus:bg-white" value={formData.newPassword} onChange={e => setFormData({...formData, newPassword: e.target.value})} placeholder="••••••••" />
-                  </div>
-                  <div className="flex items-center space-x-3 p-4 bg-church-beige/50 rounded-2xl">
+
+                  <Input 
+                    type="password"
+                    label="Nueva Contraseña (opcional)" 
+                    value={formData.newPassword} 
+                    onChange={e => setFormData({...formData, newPassword: e.target.value})} 
+                    placeholder="••••••••"
+                  />
+
+                  <div className="flex items-center space-x-3 p-4 bg-church-beige rounded-2xl">
                     <button 
                         type="button"
                         onClick={() => setFormData({...formData, notificaciones: !formData.notificaciones})}
@@ -145,11 +154,12 @@ const PerfilPage: React.FC = () => {
                     </button>
                     <span className="text-[10px] font-bold text-church-olive uppercase">Recibir Notificaciones</span>
                   </div>
-                  <button type="submit" disabled={loading} className="btn-primary w-full shadow-lg">
-                    {loading ? 'Guardando...' : 'Guardar Cambios'}
-                  </button>
+
+                  <Button type="submit" isLoading={loading} className="w-full">
+                    Guardar Cambios
+                  </Button>
                </form>
-            </div>
+            </Card>
           </div>
 
           {/* User Content & Recent Activity */}
@@ -298,11 +308,7 @@ const PerfilPage: React.FC = () => {
                           return (
                             <div
                               key={ora.id}
-                              className={`p-4 rounded-2xl border flex items-center justify-between transition-all ${
-                                caducada
-                                  ? 'border-red-100 bg-red-50/40'
-                                  : 'border-gray-100 hover:bg-gray-50 cursor-pointer group'
-                              }`}
+                              className={`oration-card ${caducada ? 'oration-card-expired' : ''}`}
                               onClick={!caducada ? () => navigate('/oraciones') : undefined}
                             >
                               <div className="flex items-center space-x-4 flex-1 min-w-0">

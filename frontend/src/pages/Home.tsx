@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { adminService, eventService } from '../services/api';
 import type { Area, Evento } from '../types/apiTypes';
+import { Section, Card, Button } from '../components/ui';
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -87,82 +88,62 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Reuniones (Schedule) */}
-      <section id="reuniones" className="bg-white">
-        <div className="section-container">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-serif text-church-olive mb-4">Nuestras Reuniones</h2>
-            <div className="w-20 h-1 bg-church-terracotta mx-auto rounded-full"></div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {[
-              { day: 'Domingos', time: '11:00h', title: 'Culto de Adoración' },
-              { day: 'Miércoles', time: '19:30h', title: 'Estudio Bíblico' },
-              { day: 'Viernes', time: '20:00h', title: 'Reunión de Oración' },
-              { day: 'Sábados', time: '18:00h', title: 'Jóvenes' },
-            ].map((item, idx) => (
-              <div key={idx} className="card bg-church-beige p-10 transition-all hover:shadow-lg hover:-translate-y-1">
-                <span className="text-church-terracotta font-bold uppercase tracking-widest text-xs mb-2 block">{item.day}</span>
-                <h3 className="text-2xl font-serif text-church-olive mb-4">{item.title}</h3>
-                <div className="flex items-center text-gray-500 font-medium">
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  {item.time}
-                </div>
+      <Section id="reuniones" title="Nuestras Reuniones" centered>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {[
+            { day: 'Domingos', time: '11:00h', title: 'Culto de Adoración' },
+            { day: 'Miércoles', time: '19:30h', title: 'Estudio Bíblico' },
+            { day: 'Viernes', time: '20:00h', title: 'Reunión de Oración' },
+            { day: 'Sábados', time: '18:00h', title: 'Jóvenes' },
+          ].map((item, idx) => (
+            <Card key={idx} className="bg-church-beige p-10">
+              <span className="text-church-terracotta font-bold uppercase tracking-widest text-xs mb-2 block">{item.day}</span>
+              <h3 className="text-2xl font-serif text-church-olive mb-4">{item.title}</h3>
+              <div className="flex items-center text-gray-500 font-medium">
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {item.time}
               </div>
+            </Card>
+          ))}
+        </div>
+      </Section>
+
+      <Section className="bg-church-beige/30" title="Eventos Próximos" subtitle="No te lo pierdas" centered>
+        {upcomingEvents.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+            {upcomingEvents.map(evento => (
+              <Card key={evento.id} className="p-0 overflow-hidden text-left flex flex-col">
+                <div className="bg-church-olive p-4 text-white text-center">
+                  <span className="block text-2xl font-bold">{new Date(evento.fecha_inicio).getDate()}</span>
+                  <span className="block text-sm uppercase tracking-wider">{new Date(evento.fecha_inicio).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })}</span>
+                </div>
+                <div className="p-6 flex-grow flex flex-col justify-between">
+                  <div>
+                    <h3 className="font-serif text-xl text-church-olive mb-2">{evento.titulo}</h3>
+                    <p className="text-sm text-gray-500 mb-4 line-clamp-2">{evento.descripcion}</p>
+                  </div>
+                  <div className="flex items-center text-xs font-bold text-church-terracotta">
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    Ubicación de Iglesia
+                  </div>
+                </div>
+              </Card>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Próximos Eventos */}
-      <section className="bg-church-beige/30 border-t border-gray-100 pb-16 pt-8 text-center">
-        <div className="section-container">
-          <div className="text-center mb-12">
-            <span className="text-church-terracotta font-bold uppercase tracking-[.3em] text-xs mb-4 block">No te lo pierdas</span>
-            <h2 className="text-4xl font-serif text-church-olive mb-4">Eventos Próximos</h2>
-            <div className="w-20 h-1 bg-church-terracotta mx-auto rounded-full"></div>
+        ) : (
+          <div className="p-8 border-2 border-dashed border-gray-200 rounded-xl bg-white/50 text-gray-400">
+            <p>Actualmente no hay eventos próximos agendados.</p>
           </div>
-          
-          {upcomingEvents.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-              {upcomingEvents.map(evento => (
-                <div key={evento.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden text-left flex flex-col hover:shadow-md transition-shadow">
-                  <div className="bg-church-olive p-4 text-white text-center">
-                    <span className="block text-2xl font-bold">{new Date(evento.fecha_inicio).getDate()}</span>
-                    <span className="block text-sm uppercase tracking-wider">{new Date(evento.fecha_inicio).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })}</span>
-                  </div>
-                  <div className="p-6 flex-grow flex flex-col justify-between">
-                    <div>
-                      <h3 className="font-serif text-xl text-church-olive mb-2">{evento.titulo}</h3>
-                      <p className="text-sm text-gray-500 mb-4 line-clamp-2">{evento.descripcion}</p>
-                    </div>
-                    <div className="flex items-center text-xs font-bold text-church-terracotta">
-                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                      Ubicación de Iglesia
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="p-8 border-2 border-dashed border-gray-200 rounded-xl bg-white/50 text-gray-400">
-              <p>Actualmente no hay eventos próximos agendados.</p>
-            </div>
-          )}
-          
-          <div className="mt-10">
-            <button 
-              onClick={() => navigate('/eventos')}
-              className="text-church-olive border border-church-olive px-8 py-3 rounded uppercase font-bold text-sm tracking-widest hover:bg-church-olive hover:text-white transition-colors"
-            >
-              Ver todos los eventos
-            </button>
-          </div>
+        )}
+        
+        <div className="mt-10">
+          <Button variant="outline" onClick={() => navigate('/eventos')}>
+            Ver todos los eventos
+          </Button>
         </div>
-      </section>
+      </Section>
 
       {/* Áreas de Trabajo (Ministerios) */}
       <section id="ministerios" className="bg-church-beige">

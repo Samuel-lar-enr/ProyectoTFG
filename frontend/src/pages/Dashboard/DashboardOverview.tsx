@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Section, Card } from '../../components/ui';
 
 const modules = [
   { name: 'Usuarios', description: 'Gestión de roles, permisos y usuarios.', href: '/dashboard/usuarios', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
@@ -12,30 +13,28 @@ const modules = [
 
 const DashboardOverview: React.FC = () => {
   return (
-    <div>
-      <h1 className="text-3xl font-bold font-serif text-church-olive mb-2">Panel de Control</h1>
-      <p className="text-gray-500 mb-8">Administra todo el contenido de la plataforma de la Iglesia La Vid Verdadera.</p>
-
+    <Section 
+      title="Panel de Control" 
+      subtitle="Administra todo el contenido de la plataforma de la Iglesia La Vid Verdadera."
+    >
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {modules.map((mod) => (
-          <Link
-            key={mod.name}
-            to={mod.href}
-            className="group block p-6 bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-md transition-all hover:border-church-terracotta"
-          >
-            <div className="flex items-center space-x-4 mb-4">
-              <div className="w-12 h-12 bg-church-beige text-church-terracotta rounded-lg flex items-center justify-center shrink-0 group-hover:bg-church-terracotta group-hover:text-white transition-colors">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={mod.icon} />
-                </svg>
+          <Link key={mod.name} to={mod.href}>
+            <Card className="hover:border-church-terracotta group h-full">
+              <div className="flex items-center space-x-4 mb-4">
+                <div className="w-12 h-12 bg-church-beige text-church-terracotta rounded-xl flex items-center justify-center shrink-0 group-hover:bg-church-terracotta group-hover:text-white transition-colors">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={mod.icon} />
+                  </svg>
+                </div>
+                <h2 className="text-lg font-bold text-gray-900 group-hover:text-church-terracotta transition-colors">{mod.name}</h2>
               </div>
-              <h2 className="text-lg font-bold text-gray-900 group-hover:text-church-terracotta transition-colors">{mod.name}</h2>
-            </div>
-            <p className="text-sm text-gray-500">{mod.description}</p>
+              <p className="text-sm text-gray-500">{mod.description}</p>
+            </Card>
           </Link>
         ))}
       </div>
-    </div>
+    </Section>
   );
 };
 

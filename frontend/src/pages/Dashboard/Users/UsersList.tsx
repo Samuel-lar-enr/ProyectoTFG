@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { api } from '../../../services/api';
 import { toast } from 'sonner';
 import { useDashboard } from '../../../context/DashboardContext';
+import { Button, Input, Modal, Badge } from '../../../components/ui';
 import type { User } from '../../../types/apiTypes';
 
 const UsersList: React.FC = () => {
@@ -29,16 +30,15 @@ const UsersList: React.FC = () => {
         await api.put(`/usuarios/${editingUser.id}`, { ...data, roles: rolesArray });
         toast.success('Usuario actualizado correctamente');
       } else {
-        // POST request to create.
+        // POST request to create USER.
         await api.post('/usuarios/', { ...data, roles: rolesArray });
         toast.success('Usuario creado exitosamente');
       }
       setShowModal(false);
-      refreshUsers();
-    } catch (error) {
-      console.error(error);
-      toast.error('Error al guardar el usuario.');
-      setShowModal(false);
+      await refreshUsers();
+    } catch (error: any) {
+      console.error("ERROR GUARDANDO USUARIO:", error);
+      toast.error(error.response?.data?.message || 'Error al guardar el usuario.');
     }
   };
 
@@ -109,16 +109,16 @@ const UsersList: React.FC = () => {
           </svg>
         </div>
 
-        <div className="flex bg-gray-100 p-1 rounded-lg">
+        <div className="flex bg-gray-100 p-1 rounded-xl shadow-inner border border-gray-200/50">
           <button
             onClick={() => setFilter('all')}
-            className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${filter === 'all' ? 'bg-white shadow-sm text-church-olive' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${filter === 'all' ? 'bg-white shadow-md text-church-olive scale-100' : 'text-gray-400 hover:text-gray-600'}`}
           >
             Todos
           </button>
           <button
             onClick={() => setFilter('banned')}
-            className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${filter === 'banned' ? 'bg-white shadow-sm text-red-600' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${filter === 'banned' ? 'bg-white shadow-md text-red-600 scale-100' : 'text-gray-400 hover:text-gray-600'}`}
           >
             Baneados ({users.filter(u => u.estado === 3).length})
           </button>
@@ -139,12 +139,12 @@ const UsersList: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {loading ? (
-                <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500">Cargando datos...</td></tr>
+                <tr><td colSpan={5} className="px-6 py-4 text-center text-gray-500">Cargando datos...</td></tr>
               ) : filteredUsers.length === 0 ? (
-                <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500">No hay resultados.</td></tr>
+                <tr><td colSpan={5} className="px-6 py-4 text-center text-gray-500">No hay resultados.</td></tr>
               ) : (
                 filteredUsers.map((u) => (
-                  <tr key={u.id} className="hover:bg-gray-50/50 transition-colors">
+                  <tr key={u.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 font-mono text-gray-400">#{u.id}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center">
@@ -155,7 +155,7 @@ const UsersList: React.FC = () => {
                           <div className="flex items-center space-x-2">
                             <div className="font-medium text-gray-900">{u.username}</div>
                             {u.estado === 3 && (
-                              <span className="px-1.5 py-0.5 bg-red-500 text-white text-[8px] font-black uppercase rounded shadow-sm">Baneado</span>
+                              <Badge variant="danger" size="xs">Baneado</Badge>
                             )}
                           </div>
                           <div className="text-xs text-gray-500">{u.email}</div>
@@ -165,27 +165,32 @@ const UsersList: React.FC = () => {
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-1">
                         {u.roles?.map(r => (
-                           <span key={r} className={`px-2 py-1 text-[10px] uppercase tracking-wider font-bold rounded-full ${r === 'administrador' ? 'bg-red-100 text-red-700' : r === 'pastor' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}`}>
+                           <Badge 
+                            key={r} 
+                            variant={r === 'administrador' ? 'danger' : r === 'pastor' ? 'primary' : 'outline'}
+                          >
                              {r}
-                           </span>
-                        )) || <span className="text-gray-400 italic">Sin roles</span>}
+                           </Badge>
+                        )) || <span className="text-gray-400 italic text-xs">Sin roles</span>}
                       </div>
                     </td>
                     <td className="px-6 py-4">{new Date(u.fecha_creacion).toLocaleDateString()}</td>
-                    <td className="px-6 py-4 flex justify-center space-x-3">
-                      <button onClick={() => { setEditingUser(u); setModalRoles(u.roles || []); setRoleToAdd(''); setShowModal(true); }} className="text-blue-500 hover:text-blue-700 transition-colors tooltip" title="Editar Rol">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                      </button>
-                      <button 
-                        onClick={() => handleBan(u)} 
-                        className={`${u.estado === 3 ? 'text-green-500 hover:text-green-700' : 'text-orange-500 hover:text-orange-700'} transition-colors tooltip`} 
-                        title={u.estado === 3 ? 'Desbanear Usuario' : 'Banear Usuario'}
-                      >
-                        <span className="text-xl">🔨</span>
-                      </button>
-                      <button onClick={() => handleDelete(u.id)} className="text-red-500 hover:text-red-700 transition-colors tooltip" title="Eliminar Usuario">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                      </button>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex justify-center space-x-3">
+                        <button onClick={() => { setEditingUser(u); setModalRoles(u.roles || []); setRoleToAdd(''); setShowModal(true); }} className="text-blue-500 hover:text-blue-700 transition-colors tooltip" title="Editar Rol">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                        </button>
+                        <button 
+                          onClick={() => handleBan(u)} 
+                          className={`${u.estado === 3 ? 'text-green-500 hover:text-green-700' : 'text-orange-500 hover:text-orange-700'} transition-colors tooltip`} 
+                          title={u.estado === 3 ? 'Desbanear Usuario' : 'Banear Usuario'}
+                        >
+                          <span className="text-xl">🔨</span>
+                        </button>
+                        <button onClick={() => handleDelete(u.id)} className="text-red-500 hover:text-red-700 transition-colors tooltip" title="Eliminar Usuario">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -195,81 +200,84 @@ const UsersList: React.FC = () => {
         </div>
       </div>
 
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-bold font-serif text-church-olive mb-4">
-              {editingUser ? 'Editar Usuario' : 'Añadir Usuario'}
-            </h3>
-            <form onSubmit={handleSaveUser} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre de Usuario</label>
-                <input required type="text" name="username" defaultValue={editingUser?.username} className="w-full px-3 py-2 border rounded-md focus:ring-church-olive focus:border-church-olive" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input required type="email" name="email" defaultValue={editingUser?.email} className="w-full px-3 py-2 border rounded-md focus:ring-church-olive focus:border-church-olive" />
-              </div>
-              {!editingUser && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
-                  <input required type="password" name="password" className="w-full px-3 py-2 border rounded-md focus:ring-church-olive focus:border-church-olive" />
-                </div>
-              )}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Roles Gestionados</label>
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {modalRoles.length === 0 && <span className="text-sm text-gray-400 italic">No tiene roles asignados</span>}
-                  {modalRoles.map(r => (
-                    <span key={r} className={`flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-bold ${r === 'administrador' ? 'bg-red-100 text-red-700 border border-red-200' : r === 'pastor' ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-gray-100 text-gray-700 border border-gray-200'}`}>
-                      <span>{r.toUpperCase()}</span>
-                      <button 
-                        type="button" 
-                        onClick={() => setModalRoles(modalRoles.filter(role => role !== r))} 
-                        className="text-red-500 hover:bg-red-200 rounded-full w-4 h-4 flex items-center justify-center font-bold transition-colors ml-1"
-                      >
-                        &times;
-                      </button>
-                    </span>
-                  ))}
-                </div>
-                <div className="flex space-x-2">
-                  <select 
-                    value={roleToAdd} 
-                    onChange={e => setRoleToAdd(e.target.value)} 
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-church-olive focus:border-church-olive text-sm"
+      <Modal
+        isOpen={showModal}
+        onClose={() => { setShowModal(false); setEditingUser(null); }}
+        title={editingUser ? 'Editar Usuario' : 'Añadir Usuario'}
+      >
+        <form id="user-form" onSubmit={handleSaveUser} className="space-y-6">
+          <Input 
+            required 
+            label="Nombre de Usuario" 
+            name="username" 
+            defaultValue={editingUser?.username} 
+          />
+          <Input 
+            required 
+            type="email" 
+            label="Email" 
+            name="email" 
+            defaultValue={editingUser?.email} 
+          />
+          {!editingUser && (
+            <Input 
+              required 
+              type="password" 
+              label="Contraseña" 
+              name="password" 
+            />
+          )}
+          <div className="form-group">
+            <label className="form-label">Roles Gestionados</label>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {modalRoles.length === 0 && <span className="text-xs text-gray-400 italic">No tiene roles asignados</span>}
+              {modalRoles.map(r => (
+                <div key={r} className="group relative">
+                  <Badge 
+                    variant={r === 'administrador' ? 'danger' : r === 'pastor' ? 'primary' : 'outline'}
+                    className="pr-6"
                   >
-                    <option value="">Seleccionar nuevo rol...</option>
-                    {['administrador', 'pastor', 'usuario'].filter(r => !modalRoles.includes(r)).map(r => (
-                      <option key={r} value={r}>{r}</option>
-                    ))}
-                  </select>
+                    {r.toUpperCase()}
+                  </Badge>
                   <button 
                     type="button" 
-                    onClick={() => {
-                      if(roleToAdd && !modalRoles.includes(roleToAdd)) {
-                        setModalRoles([...modalRoles, roleToAdd]);
-                        setRoleToAdd('');
-                      }
-                    }} 
-                    className="bg-church-olive text-white px-4 py-2 rounded-md hover:bg-church-olive/90 transition-colors font-bold text-sm"
+                    onClick={() => setModalRoles(modalRoles.filter(role => role !== r))} 
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors"
                   >
-                    +
+                    &times;
                   </button>
                 </div>
-              </div>
-              <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-100">
-                <button type="button" onClick={() => { setShowModal(false); setEditingUser(null); }} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md transition-colors font-medium">
-                  Cancelar
-                </button>
-                <button type="submit" className="px-4 py-2 bg-church-terracotta text-white rounded-md hover:bg-church-terracotta/90 transition-colors font-medium">
-                  {editingUser ? 'Guardar Cambios' : 'Crear Usuario'}
-                </button>
-              </div>
-            </form>
+              ))}
+            </div>
+            <div className="flex space-x-2">
+              <select 
+                value="" 
+                onChange={e => {
+                  const val = e.target.value;
+                  if(val && !modalRoles.includes(val)) {
+                    setModalRoles([...modalRoles, val]);
+                  }
+                }} 
+                className="form-input flex-1 py-2 text-xs"
+              >
+                <option value="">Añadir nuevo rol...</option>
+                {['administrador', 'pastor', 'usuario'].filter(r => !modalRoles.includes(r)).map(r => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+            </div>
           </div>
-        </div>
-      )}
+
+          <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
+            <Button type="button" variant="ghost" onClick={() => { setShowModal(false); setEditingUser(null); }}>
+              Cancelar
+            </Button>
+            <Button type="submit">
+              {editingUser ? 'Guardar Cambios' : 'Crear Usuario'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

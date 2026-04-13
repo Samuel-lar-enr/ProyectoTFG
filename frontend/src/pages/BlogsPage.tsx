@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 import { useDashboard } from '../context/DashboardContext';
 import { getImageUrl } from '../utils/imageUtils';
+import { Button, Input, Card, Badge, Modal, Section } from '../components/ui';
 
 interface Blog {
   id: number;
@@ -139,13 +140,13 @@ const RenderComment: React.FC<RenderCommentProps> = ({
               autoFocus
             />
             <div className="flex justify-end mt-2">
-              <button 
+            <Button 
                 onClick={() => handleCreateComentario(comment.id)}
                 disabled={!replyText.trim()}
-                className="bg-church-terracotta text-white px-4 py-2 rounded-lg font-bold uppercase tracking-widest text-[9px] hover:bg-church-terracotta/90 transition-all disabled:opacity-50"
+                size="sm"
               >
                 Enviar respuesta
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -422,28 +423,28 @@ const BlogsPage: React.FC = () => {
             <span className="text-church-terracotta font-bold uppercase tracking-[.3em] text-xs mb-3 block">Comunidad & Palabra</span>
             <h1 className="text-4xl md:text-5xl font-serif text-church-olive">Blog de la Iglesia</h1>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
              <div className="relative">
                 <input 
                   type="text" 
                   placeholder="Buscar posts..." 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-3 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-church-olive/20 transition-all w-64 shadow-inner"
+                  className="pl-10 pr-4 py-2.5 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-church-olive/20 transition-all w-64 shadow-inner"
                 />
                 <svg className="w-4 h-4 absolute left-3 top-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
              </div>
-             <button 
+             <Button 
+                size="sm"
                 onClick={() => { 
                   if (!user) return navigate('/login');
                   setEditingBlog(null); 
                   setBlogData({titulo:'', contenido:'', imagen:'', tags:[]}); 
                   setShowModal(true); 
-                }} 
-                className="bg-church-olive text-white px-6 py-3 rounded-xl font-bold uppercase tracking-widest hover:bg-church-olive/90 transition-all shadow-lg text-sm"
+                }}
               >
                 Nuevo Post
-             </button>
+             </Button>
           </div>
         </div>
 
@@ -472,9 +473,9 @@ const BlogsPage: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-16">
             {filteredBlogs.map((b) => (
-              <article key={b.id} onClick={() => setViewingBlog(b)} className="group cursor-pointer flex flex-col transition-all hover:translate-y-[-4px]">
+              <article key={b.id} onClick={() => setViewingBlog(b)} className="blog-post-card">
                 {b.imagen && (
-                  <div className="aspect-video w-full rounded-3xl overflow-hidden mb-6 shadow-xl relative">
+                  <div className="blog-post-image-container">
                     <img src={getImageUrl(b.imagen)} alt={b.titulo} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                     <div className="absolute inset-0 bg-linear-to-t from-black/20 to-transparent" />
                   </div>
@@ -575,53 +576,76 @@ const BlogsPage: React.FC = () => {
         </div>
       )}
 
-      {showModal && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-church-olive/20 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl p-10 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-3xl font-serif text-church-olive mb-8">{editingBlog ? 'Editar Entrada' : 'Escribir nueva entrada'}</h2>
-            <form onSubmit={handleCreateOrUpdateBlog} className="space-y-6">
-              <div>
-                <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Título del Post</label>
-                <input required type="text" className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-church-terracotta text-xl" placeholder="Escribe algo inspirador..." value={blogData.titulo} onChange={e => setBlogData({...blogData, titulo: e.target.value})} />
-              </div>
-              <div>
-                <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Imagen de Portada</label>
-                <div className="flex items-center space-x-4">
-                    <label className="cursor-pointer bg-church-olive text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-church-olive/80 transition-all">
-                        Seleccionar Archivo
-                        <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
-                    </label>
-                    {selectedFile && <span className="text-[9px] text-gray-500 truncate max-w-[150px]">{selectedFile.name}</span>}
-                    {(previewUrl || blogData.imagen) && (
-                        <div className="w-16 h-10 rounded-lg overflow-hidden border border-gray-200">
-                            <img src={previewUrl || getImageUrl(blogData.imagen)} className="w-full h-full object-cover" alt="Preview" />
-                        </div>
-                    )}
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Contenido</label>
-                <textarea required rows={6} className="w-full px-6 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-church-terracotta text-lg" placeholder="Desarrolla tu mensaje aquí..." value={blogData.contenido} onChange={e => setBlogData({...blogData, contenido: e.target.value})} />
-              </div>
-              <div>
-                <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Categorías</label>
-                <div className="flex flex-wrap gap-2">
-                  {blogTags.map(tag => (
-                    <button key={tag.id} type="button" onClick={() => {
-                      const exists = blogData.tags.includes(tag.nombre);
-                      setBlogData({...blogData, tags: exists ? blogData.tags.filter(t => t !== tag.nombre) : [...blogData.tags, tag.nombre]});
-                    }} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all border ${blogData.tags.includes(tag.nombre) ? 'bg-church-terracotta border-church-terracotta text-white' : 'bg-gray-50 border-gray-100 text-gray-400 hover:border-gray-300'}`}>{tag.nombre}</button>
-                  ))}
-                </div>
-              </div>
-              <div className="flex justify-end space-x-4 pt-4">
-                <button type="button" onClick={() => { setShowModal(false); setEditingBlog(null); }} className="px-8 py-4 text-gray-400 font-bold uppercase tracking-widest">Cancelar</button>
-                <button type="submit" className="bg-church-terracotta text-white px-10 py-4 rounded-xl font-bold uppercase shadow-lg hover:bg-church-terracotta/90 transition-all">{editingBlog ? 'Guardar Cambios' : 'Publicar'}</button>
-              </div>
-            </form>
+      <Modal
+        isOpen={showModal}
+        onClose={() => { setShowModal(false); setEditingBlog(null); }}
+        title={editingBlog ? 'Editar Entrada' : 'Escribir nueva entrada'}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => { setShowModal(false); setEditingBlog(null); }}>Cancelar</Button>
+            <Button type="submit" form="blog-form">{editingBlog ? 'Guardar Cambios' : 'Publicar'}</Button>
+          </>
+        }
+      >
+        <form id="blog-form" onSubmit={handleCreateOrUpdateBlog} className="space-y-6">
+          <Input 
+            required 
+            label="Título del Post" 
+            placeholder="Escribe algo inspirador..." 
+            value={blogData.titulo} 
+            onChange={e => setBlogData({...blogData, titulo: e.target.value})} 
+          />
+          
+          <div className="form-group">
+            <label className="form-label">Imagen de Portada</label>
+            <div className="flex items-center space-x-4">
+                <label className="cursor-pointer bg-church-olive text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-church-olive-dark transition-all">
+                    Seleccionar Archivo
+                    <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+                </label>
+                {selectedFile && <span className="text-[9px] text-gray-500 truncate max-w-[150px]">{selectedFile.name}</span>}
+                {(previewUrl || blogData.imagen) && (
+                    <div className="w-16 h-10 rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+                        <img src={previewUrl || getImageUrl(blogData.imagen)} className="w-full h-full object-cover" alt="Preview" />
+                    </div>
+                )}
+            </div>
           </div>
-        </div>
-      )}
+
+          <div className="form-group">
+            <label className="form-label">Contenido</label>
+            <textarea 
+              required 
+              rows={8} 
+              className="form-input resize-none" 
+              placeholder="Desarrolla tu mensaje aquí..." 
+              value={blogData.contenido} 
+              onChange={e => setBlogData({...blogData, contenido: e.target.value})} 
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Categorías</label>
+            <div className="flex flex-wrap gap-2">
+              {blogTags.map(tag => {
+                const isSelected = blogData.tags.includes(tag.nombre);
+                return (
+                  <button 
+                    key={tag.id} 
+                    type="button" 
+                    onClick={() => {
+                      setBlogData({...blogData, tags: isSelected ? blogData.tags.filter(t => t !== tag.nombre) : [...blogData.tags, tag.nombre]});
+                    }} 
+                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all border ${isSelected ? 'bg-church-terracotta border-church-terracotta text-white shadow-sm' : 'bg-gray-50 border-gray-100 text-gray-400 hover:border-gray-200'}`}
+                  >
+                    {tag.nombre}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

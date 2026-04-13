@@ -4,6 +4,7 @@ import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 import { useDashboard } from '../context/DashboardContext';
+import { Button, Input, Card, Badge, Modal } from '../components/ui';
 
 interface Evento {
   id: number;
@@ -273,9 +274,9 @@ const EventosPage: React.FC = () => {
             <h1 className="text-4xl md:text-6xl font-serif text-church-olive">Calendario de Actividades</h1>
           </div>
           {(!user || isPrivileged) && (
-            <button onClick={openCreateModal} className="btn-primary shadow-xl">
+            <Button onClick={openCreateModal}>
               Agendar Evento
-            </button>
+            </Button>
           )}
         </div>
 
@@ -372,11 +373,11 @@ const EventosPage: React.FC = () => {
               ) : (
                 <div className="space-y-4">
                   {selectedDayEventos.map(e => (
-                    <div key={e.id} className={`p-6 rounded-2xl bg-white shadow-md border group relative overflow-hidden transition-all duration-300 hover:shadow-2xl ${e.estado === 2 ? 'border-amber-200 bg-amber-50/10' : 'border-gray-100/50 hover:-translate-y-1'}`}>
+                    <div key={e.id} className={`event-card ${e.estado === 2 ? 'border-amber-200 bg-amber-50/10' : ''}`}>
                       {e.estado === 2 ? (
                         <div className="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
                       ) : (
-                        <div className="absolute top-0 left-0 w-1 h-full bg-church-olive opacity-20"></div>
+                        <div className="event-card-accent"></div>
                       )}
                       <div className="flex items-center justify-between mb-3">
                         <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg shadow-sm ${e.estado === 2 ? 'bg-amber-100 text-amber-700' : 'bg-white text-church-olive'}`}>
@@ -439,45 +440,60 @@ const EventosPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal Creación/Edición */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-church-olive/30 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-xl p-10 max-h-[90vh] overflow-y-auto animate-in zoom-in duration-300">
-            <h2 className="text-3xl font-serif text-church-olive mb-8">{editingEvento ? 'Actualizar Evento' : 'Agendar Actividad'}</h2>
-            <form onSubmit={handleSave} className="space-y-6">
-              <div className="form-group">
-                <label className="form-label">Título del Evento</label>
-                <input required className="form-input text-lg font-serif" value={formData.titulo} onChange={e => setFormData({...formData, titulo: e.target.value})} placeholder="Pe. Culto Dominical, Reunión de Jóvenes..." />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Descripción</label>
-                <textarea rows={3} className="form-input resize-none" value={formData.descripcion} onChange={e => setFormData({...formData, descripcion: e.target.value})} placeholder="Indica detalles importantes del encuentro..." />
-              </div>
-              <div className="grid grid-cols-2 gap-6">
-                <div className="form-group">
-                  <label className="form-label">Fecha y Hora</label>
-                  <input required type="datetime-local" className="form-input" value={formData.fecha_inicio} onChange={e => setFormData({...formData, fecha_inicio: e.target.value})} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Aforo Máximo</label>
-                  <input required type="number" className="form-input" value={formData.aforo_max} onChange={e => setFormData({...formData, aforo_max: parseInt(e.target.value)})} />
-                </div>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Ministerio Responsable</label>
-                <select className="form-input" value={formData.id_area} onChange={e => setFormData({...formData, id_area: parseInt(e.target.value)})}>
-                  <option value={0}>Selecciona un área...</option>
-                  {userAreas.map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)}
-                </select>
-              </div>
-              <div className="flex justify-end space-x-4 pt-6 border-t border-gray-100">
-                <button type="button" onClick={() => setShowModal(false)} className="px-6 py-3 text-gray-400 font-bold uppercase text-xs hover:text-gray-600 transition-colors">Cerrar</button>
-                <button type="submit" className="btn-primary px-8">{editingEvento ? 'Guardar Cambios' : 'Agendar Evento'}</button>
-              </div>
-            </form>
+      <Modal 
+        isOpen={showModal} 
+        onClose={() => setShowModal(false)}
+        title={editingEvento ? 'Actualizar Evento' : 'Agendar Actividad'}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setShowModal(false)}>Cerrar</Button>
+            <Button type="submit" form="event-form">{editingEvento ? 'Guardar Cambios' : 'Agendar Evento'}</Button>
+          </>
+        }
+      >
+        <form id="event-form" onSubmit={handleSave} className="space-y-4">
+          <Input 
+            required 
+            label="Título del Evento" 
+            value={formData.titulo} 
+            onChange={e => setFormData({...formData, titulo: e.target.value})} 
+            placeholder="Pe. Culto Dominical, Reunión de Jóvenes..." 
+          />
+          <div className="form-group">
+            <label className="form-label">Descripción</label>
+            <textarea 
+              rows={3} 
+              className="form-input resize-none" 
+              value={formData.descripcion} 
+              onChange={e => setFormData({...formData, descripcion: e.target.value})} 
+              placeholder="Indica detalles importantes del encuentro..." 
+            />
           </div>
-        </div>
-      )}
+          <div className="grid grid-cols-2 gap-6">
+            <Input 
+              required 
+              type="datetime-local" 
+              label="Fecha y Hora" 
+              value={formData.fecha_inicio} 
+              onChange={e => setFormData({...formData, fecha_inicio: e.target.value})} 
+            />
+            <Input 
+              required 
+              type="number" 
+              label="Aforo Máximo" 
+              value={formData.aforo_max} 
+              onChange={e => setFormData({...formData, aforo_max: parseInt(e.target.value)})} 
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Ministerio Responsable</label>
+            <select className="form-input" value={formData.id_area} onChange={e => setFormData({...formData, id_area: parseInt(e.target.value)})}>
+              <option value={0}>Selecciona un área...</option>
+              {userAreas.map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)}
+            </select>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };
