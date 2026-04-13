@@ -88,15 +88,16 @@ def update_usuario(id):
                     roles_data = [r.strip() for r in roles_data.split(',')]
             
             roles_names = []
-            for r in roles_data:
-                if isinstance(r, dict) and 'nombre' in r:
-                    roles_names.append(r['nombre'])
-                elif isinstance(r, str):
-                    roles_names.append(r)
+            if isinstance(roles_data, list):
+                for r in roles_data:
+                    if isinstance(r, dict) and 'nombre' in r:
+                        roles_names.append(r['nombre'])
+                    elif isinstance(r, str):
+                        roles_names.append(r)
             
-            if roles_names:
-                found_roles = Rol.query.filter(Rol.nombre.in_(roles_names)).all()
-                usuario.roles = found_roles
+            # Buscamos los roles en la base de datos y los asignamos
+            found_roles = Rol.query.filter(Rol.nombre.in_(roles_names)).all()
+            usuario.roles = found_roles
             
         db.session.commit()
         return jsonify({'status': 'success', 'message': 'Usuario actualizado'}), 200
@@ -123,8 +124,8 @@ def delete_usuario(id):
 def ban_usuario(id):
     from flask_login import current_user as cu
     # Solo admin/pastor pueden banear
-    role_ids = [rol.id for rol in cu.roles] if cu.is_authenticated else []
-    if 1 not in role_ids and 2 not in role_ids:
+    role_names = [rol.nombre.lower() for rol in cu.roles] if cu.is_authenticated else []
+    if 'administrador' not in role_names and 'pastor' not in role_names:
         return jsonify({'status': 'error', 'message': 'No tienes permiso para banear usuarios'}), 403
 
     usuario = Usuario.query.get_or_404(id)
@@ -132,8 +133,8 @@ def ban_usuario(id):
     # No puede banearse a sí mismo ni a otro admin
     if usuario.id == cu.id:
         return jsonify({'status': 'error', 'message': 'No puedes banearte a ti mismo'}), 400
-    target_roles = [rol.id for rol in usuario.roles]
-    if 1 in target_roles:
+    target_role_names = [rol.nombre.lower() for rol in usuario.roles]
+    if 'administrador' in target_role_names:
         return jsonify({'status': 'error', 'message': 'No puedes banear a un administrador'}), 400
 
     # Toggle: 1 -> 3 (ban), 3 -> 1 (unban)

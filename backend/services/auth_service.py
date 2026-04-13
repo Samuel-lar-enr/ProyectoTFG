@@ -12,10 +12,10 @@ def check_permission(owner_id=None):
     if not current_user.is_authenticated:
         return False
 
-    # Efficient way:
-    role_ids = [rol.id for rol in current_user.roles]
+    # Check by role name (more robust than hardcoded IDs)
+    role_names = [rol.nombre.lower() for rol in current_user.roles]
     
-    if 1 in role_ids or 2 in role_ids:
+    if 'administrador' in role_names or 'pastor' in role_names:
         return True
         
     # Check ownership
@@ -49,8 +49,8 @@ def has_area_permission(area_id):
         return False
     
     # 1. Check global roles
-    role_ids = [rol.id for rol in current_user.roles]
-    if 1 in role_ids or 2 in role_ids:
+    role_names = [rol.nombre.lower() for rol in current_user.roles]
+    if 'administrador' in role_names or 'pastor' in role_names:
         return True
     
     # 2. Check Puesto in area
@@ -76,8 +76,8 @@ def needs_event_confirmation(area_id):
         return False
     
     # 1. Admins/Pastors are trusted
-    role_ids = [rol.id for rol in current_user.roles]
-    if 1 in role_ids or 2 in role_ids:
+    role_names = [rol.nombre.lower() for rol in current_user.roles]
+    if 'administrador' in role_names or 'pastor' in role_names:
         return False
     
     # 2. Check if any Puesto in this area requires confirmation
