@@ -87,7 +87,7 @@
   }
 
   /* Badges Dinámicos */
-  .badge-base {
+  @utility badge-base {
     @apply px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-sm border;
   }
 
