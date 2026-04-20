@@ -129,8 +129,12 @@ const RenderComment: React.FC<RenderCommentProps> = ({
 
       {isReplying && (
         <div className="mt-4 flex space-x-3 animate-in slide-in-from-top-2 duration-300">
-          <div className="w-8 h-8 rounded-lg bg-church-olive shrink-0 flex items-center justify-center text-white text-[10px] font-bold">
-            {user?.username?.charAt(0).toUpperCase() || '?'}
+          <div className="w-8 h-8 rounded-lg bg-church-olive shrink-0 flex items-center justify-center text-white text-sm font-bold shadow-sm overflow-hidden">
+            {user?.avatar ? (
+              <img src={getImageUrl(user.avatar)} alt={user.username} className="w-full h-full object-cover" />
+            ) : (
+              user?.username?.charAt(0).toUpperCase() || '?'
+            )}
           </div>
           <div className="flex-1">
             <textarea 
@@ -568,7 +572,13 @@ const BlogsPage: React.FC = () => {
                 <div className="bg-gray-50 -mx-8 px-8 py-16 rounded-t-[3rem]">
                   <h3 className="text-2xl font-serif text-church-olive mb-12">Conversación ({viewingBlog.n_comentarios || 0})</h3>
                   <div className="mb-8 flex space-x-3 items-start">
-                    <div className="w-10 h-10 rounded-full bg-church-terracotta shrink-0 flex items-center justify-center text-white text-sm font-bold shadow-sm">{user?.username?.charAt(0).toUpperCase() || '?'}</div>
+                    <div className="w-10 h-10 rounded-full bg-church-terracotta shrink-0 flex items-center justify-center text-white text-sm font-bold shadow-sm overflow-hidden">
+                      {user?.avatar ? (
+                        <img src={getImageUrl(user.avatar)} alt={user.username} className="w-full h-full object-cover" />
+                      ) : (
+                        user?.username?.charAt(0).toUpperCase() || '?'
+                      )}
+                    </div>
                     <div className="flex-1 relative">
                       <textarea className="w-full bg-white border border-gray-100 rounded-2xl p-4 pr-12 text-base shadow-sm focus:ring-1 focus:ring-church-terracotta transition-all min-h-[56px] resize-none overflow-hidden" placeholder="Añade un comentario..." value={newComentario} onChange={(e) => setNewComentario(e.target.value)} />
                       <button onClick={() => handleCreateComentario()} disabled={!newComentario.trim()} className="absolute right-2 bottom-2 p-2 bg-church-olive text-white rounded-lg transition-all disabled:opacity-30"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg></button>
