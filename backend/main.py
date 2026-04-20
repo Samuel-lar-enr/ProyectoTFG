@@ -1,5 +1,6 @@
 import os
 import time
+from werkzeug.middleware.proxy_fix import ProxyFix
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request, url_for
 from flask_cors import CORS
@@ -15,6 +16,8 @@ from datetime import datetime, timedelta
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 app = Flask(__name__)
+# Aplicar ProxyFix para que Flask reconozca HTTPS detrás del proxy de Railway
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 # Configuración de carpetas para subidas
 app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB max
@@ -47,6 +50,21 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     "pool_pre_ping": True,
 }
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
+
+# Configuración de Cookies de Sesión (Diferenciando local de producción)
+# En producción (Railway) necesitamos SameSite=None y Secure=True para que Vercel pueda enviar cookies
+is_prod = os.getenv('DB_URL') is not None and 'localhost' not in os.getenv('DB_URL', '')
+
+app.config.update(
+    SESSION_COOKIE_SECURE=is_prod,
+    SESSION_COOKIE_SAMESITE='None' if is_prod else 'Lax',
+    SESSION_COOKIE_HTTPONLY=True,
+    REMEMBER_COOKIE_SECURE=is_prod,
+    REMEMBER_COOKIE_SAMESITE='None' if is_prod else 'Lax',
+    REMEMBER_COOKIE_HTTPONLY=True,
+    SESSION_PERMANENT=True,
+    PERMANENT_SESSION_LIFETIME=timedelta(days=7)
+)
 
 # Configuración de Email
 app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')

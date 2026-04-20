@@ -54,6 +54,8 @@ def register():
         db.session.commit()
         
         # Opcional: Login automático tras registro
+        from flask import session
+        session.permanent = True
         login_user(new_usuario)
         
         # Enviar email de bienvenida
@@ -88,6 +90,8 @@ def login():
         return jsonify({'status': 'error', 'message': 'Error al conectar con la base de datos'}), 500
     
     if usuario and usuario.check_password(password):
+        from flask import session
+        session.permanent = True
         login_user(usuario)
         return jsonify({
             'status': 'success', 
