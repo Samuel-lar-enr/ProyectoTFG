@@ -3,6 +3,7 @@ import { api } from '../../../services/api';
 import { toast } from 'sonner';
 import { Button, Input, Modal } from '../../../components/ui';
 import type { Area } from '../../../types/apiTypes';
+import { getImageUrl } from '../../../utils/imageUtils';
 
 const AreasList: React.FC = () => {
   const [areas, setAreas] = useState<Area[]>([]);
@@ -104,7 +105,14 @@ const AreasList: React.FC = () => {
                 filtered.map(a => (
                   <tr key={a.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-6 py-4 font-mono text-gray-400">#{a.id}</td>
-                    <td className="px-6 py-4 font-medium text-gray-900">{a.nombre}</td>
+                    <td className="px-6 py-4 font-medium text-gray-900">
+                      <div className="flex items-center space-x-3">
+                        {a.imagen && (
+                          <img src={getImageUrl(a.imagen)} alt="" className="w-8 h-8 rounded object-cover border border-gray-100" />
+                        )}
+                        <span>{a.nombre}</span>
+                      </div>
+                    </td>
                     <td className="px-6 py-4 text-sm text-gray-500 truncate max-w-xs">{a.resumen || '-'}</td>
                     <td className="px-6 py-4 text-center">
                       <div className="flex justify-center space-x-3">

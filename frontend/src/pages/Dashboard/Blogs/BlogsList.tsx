@@ -3,6 +3,7 @@ import { api } from '../../../services/api';
 import { useAuth } from '../../../context/AuthContext';
 import { toast } from 'sonner';
 import { useDashboard } from '../../../context/DashboardContext';
+import { getImageUrl } from '../../../utils/imageUtils';
 
 interface Blog {
   id: number;
@@ -33,6 +34,8 @@ const BlogsList: React.FC = () => {
   const [tagSearch, setTagSearch] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isTagDropdownOpen, setIsTagDropdownOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const blogTags = allTags.filter(t => t.tipo === 'blog');
 
@@ -44,25 +47,25 @@ const BlogsList: React.FC = () => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries());
-    
-    // Asignar el autor elegido o el usuario que esta creandolo por defecto
-    const payload: any = {
-      ...data,
-      id_user: modalAuthorId ? modalAuthorId.toString() : (user?.id || 1).toString(),
-      tags: selectedTags
-    };
 
-    // Eliminar 'autor' que pusimos dummy si existiera
-    if (payload.autor !== undefined) {
-      delete payload.autor;
+    const newFormData = new FormData();
+    newFormData.append('titulo', data.titulo as string);
+    newFormData.append('contenido', data.contenido as string);
+    newFormData.append('id_user', modalAuthorId ? modalAuthorId.toString() : (user?.id || 1).toString());
+    newFormData.append('tags', JSON.stringify(selectedTags));
+    
+    if (selectedFile) {
+        newFormData.append('file', selectedFile);
+    } else if (editingBlog?.imagen) {
+        newFormData.append('imagen', editingBlog.imagen);
     }
 
     try {
       if (editingBlog) {
-        await api.put(`/blogs/${editingBlog.id}`, payload);
+        await api.put(`/blogs/${editingBlog.id}`, newFormData, { headers: { 'Content-Type': 'multipart/form-data' } });
         toast.success('Blog actualizado');
       } else {
-        await api.post('/blogs/', payload);
+        await api.post('/blogs/', newFormData, { headers: { 'Content-Type': 'multipart/form-data' } });
         toast.success('Blog creado');
       }
       setShowModal(false);
@@ -83,6 +86,8 @@ const BlogsList: React.FC = () => {
     setSelectedTags([]);
     setTagSearch('');
     setIsTagDropdownOpen(false);
+    setSelectedFile(null);
+    setPreviewUrl(null);
   };
 
   const fetchBlogs = async () => {
@@ -168,8 +173,14 @@ const BlogsList: React.FC = () => {
                     <td className="px-6 py-4 font-mono text-gray-400">#{blog.id}</td>
                     <td className="px-6 py-4 font-medium text-gray-900">{blog.titulo}</td>
                     <td className="px-6 py-4">
-                      <span className="inline-flex items-center space-x-1">
-                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                      <span className="inline-flex items-center space-x-2">
+                        {blog.imagen && (
+                          <img 
+                            src={getImageUrl(blog.imagen)} 
+                            className="w-6 h-6 rounded object-cover shadow-sm"
+                            alt=""
+                          />
+                        )}
                         <span>{blog.autor}</span>
                       </span>
                     </td>
@@ -210,8 +221,38 @@ const BlogsList: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">URL de Imagen</label>
-                <input type="text" name="imagen" defaultValue={editingBlog?.imagen} placeholder="https://ejemplo.com/imagen.jpg" className="w-full px-3 py-2 border rounded-md focus:ring-church-olive focus:border-church-olive text-sm" />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Imagen del Blog</label>
+                {(previewUrl || editingBlog?.imagen) && (
+                  <div className="mb-2 relative w-full h-32 bg-gray-100 rounded-md overflow-hidden border border-gray-200">
+                    <img 
+                      src={previewUrl || getImageUrl(editingBlog?.imagen)} 
+                      alt="Preview" 
+                      className="w-full h-full object-contain"
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => { setSelectedFile(null); setPreviewUrl(null); if (editingBlog) editingBlog.imagen = ''; }}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 shadow-sm"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setSelectedFile(file);
+                        setPreviewUrl(URL.createObjectURL(file));
+                      }
+                    }}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-church-beige file:text-church-olive hover:file:bg-church-olive/20 transition-all cursor-pointer border border-gray-200 rounded-md"
+                  />
+                </div>
+                <p className="mt-1 text-[10px] text-gray-400">Recomendado: 1200x600px orientada a horizontal.</p>
               </div>
               
               <div>

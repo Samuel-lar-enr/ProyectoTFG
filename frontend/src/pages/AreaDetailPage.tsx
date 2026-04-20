@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { adminService } from '../services/api';
 import type { Area } from '../types/apiTypes';
+import { getImageUrl } from '../utils/imageUtils';
 
 const AreaDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -51,7 +52,7 @@ const AreaDetailPage: React.FC = () => {
         {area.imagen ? (
           <>
             <img 
-              src={`http://localhost:5000${area.imagen}`} 
+              src={getImageUrl(area.imagen)} 
               alt={area.nombre} 
               className="absolute inset-0 w-full h-full object-cover z-0 opacity-60"
               onError={(e) => {
@@ -88,7 +89,7 @@ const AreaDetailPage: React.FC = () => {
                 <div key={user.id} className="flex flex-col items-center flex-shrink-0 group cursor-default">
                   <div className="w-24 h-24 rounded-full overflow-hidden mb-3 border-4 border-white shadow-lg group-hover:border-church-terracotta transition-colors">
                     <img 
-                      src={user.avatar ? `http://localhost:5000${user.avatar}` : "https://ui-avatars.com/api/?name=" + encodeURIComponent(user.username) + "&background=A35C4A&color=fff"}
+                      src={user.avatar ? getImageUrl(user.avatar) : "https://ui-avatars.com/api/?name=" + encodeURIComponent(user.username) + "&background=A35C4A&color=fff"}
                       alt={user.username}
                       className="w-full h-full object-cover"
                       onError={(e) => {
