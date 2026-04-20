@@ -25,13 +25,18 @@ os.makedirs(os.path.join(uploads_dir, 'avatars'), exist_ok=True)
 os.makedirs(os.path.join(uploads_dir, 'blogs'), exist_ok=True)
 os.makedirs(os.path.join(uploads_dir, 'areas'), exist_ok=True)
 
-# Permitir tanto localhost como 127.0.0.1 para evitar bloqueos de CORS en Chrome/Edge
+# Permitir orígenes para CORS (Local y Producción)
 CORS(app, supports_credentials=True, origins=[
     'http://localhost:5173',
     'http://127.0.0.1:5173',
     'http://localhost:5174',
-    'http://127.0.0.1:5174'
-])
+    'http://127.0.0.1:5174',
+    'https://proyecto-tfg-seven.vercel.app'
+], methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], 
+   allow_headers=["Content-Type", "Authorization", "X-Requested-With", "Accept"])
+
+# Desactivar strict_slashes globalmente para evitar redirecciones que rompen CORS
+app.url_map.strict_slashes = False
 
 # Configuración de la base de datos (Prioriza variable de entorno DB_URL)
 db_url = os.getenv('DB_URL', 'mysql+pymysql://admin:admin123@localhost:3306/iglesia_db')
@@ -183,7 +188,7 @@ register_blueprints(app)
 from flask_cors import cross_origin
 
 @app.errorhandler(500)
-@cross_origin(supports_credentials=True, origins=['http://localhost:5174', 'http://127.0.0.1:5174', 'http://localhost:5173', 'http://127.0.0.1:5173'])
+@cross_origin(supports_credentials=True, origins=['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5174', 'http://127.0.0.1:5174', 'https://proyecto-tfg-seven.vercel.app'])
 def handle_500(e):
     return jsonify({
         'status': 'error',
