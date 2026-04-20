@@ -35,6 +35,7 @@ class Oracion(db.Model):
             'anonima': self.anonima,
             'tags': [tag.nombre for tag in self.tags],
             'autor': 'Anónimo' if self.anonima else (self.usuario.username if self.usuario else None),
+            'avatar': None if self.anonima else (self.usuario.avatar if self.usuario else None),
             'username_real': self.usuario.username if self.usuario else 'Desconocido',
             'autor_roles': [] if self.anonima else ([r.nombre.lower() for r in (self.usuario.roles if self.usuario else [])])
         }

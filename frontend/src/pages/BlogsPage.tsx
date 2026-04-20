@@ -14,6 +14,7 @@ interface Blog {
   titulo: string;
   contenido: string;
   imagen?: string | null;
+  avatar?: string | null;
   fecha_creacion: string;
   estado: number;
   tags: string[];
@@ -482,8 +483,12 @@ const BlogsPage: React.FC = () => {
                 )}
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-xs ${isOfficial(b) ? 'bg-blue-600' : 'bg-church-olive'}`}>
-                      {b.autor.charAt(0).toUpperCase()}
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-xs overflow-hidden ${isOfficial(b) ? 'bg-blue-600' : 'bg-church-olive'}`}>
+                      {b.avatar ? (
+                        <img src={getImageUrl(b.avatar)} alt={b.autor} className="w-full h-full object-cover" />
+                      ) : (
+                        b.autor.charAt(0).toUpperCase()
+                      )}
                     </div>
                     <div>
                       <span className="text-xs font-black uppercase tracking-widest text-church-olive">{b.autor}</span>
@@ -534,7 +539,13 @@ const BlogsPage: React.FC = () => {
                   </div>
                 )}
                 <div className="flex items-center space-x-4 border-t border-gray-100 pt-8">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white shadow-lg ${isOfficial(viewingBlog) ? 'bg-blue-600' : 'bg-church-olive'}`}>{viewingBlog.autor.charAt(0).toUpperCase()}</div>
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white shadow-lg overflow-hidden ${isOfficial(viewingBlog) ? 'bg-blue-600' : 'bg-church-olive'}`}>
+                    {viewingBlog.avatar ? (
+                      <img src={getImageUrl(viewingBlog.avatar)} alt={viewingBlog.autor} className="w-full h-full object-cover" />
+                    ) : (
+                      viewingBlog.autor.charAt(0).toUpperCase()
+                    )}
+                  </div>
                   <div>
                     <span className="block font-bold text-church-olive">{viewingBlog.autor}</span>
                     <span className="text-xs text-gray-400">{new Date(viewingBlog.fecha_creacion).toLocaleDateString()}</span>

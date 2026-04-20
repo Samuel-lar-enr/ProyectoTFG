@@ -3,6 +3,7 @@ import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 import { useDashboard } from '../context/DashboardContext';
+import { getImageUrl } from '../utils/imageUtils';
 
 interface Oracion {
   id: number;
@@ -16,6 +17,7 @@ interface Oracion {
   tags: string[];
   anonima: boolean;
   duracion_dias: number;
+  avatar?: string | null;
 }
 
 const OracionesPage: React.FC = () => {
@@ -237,8 +239,12 @@ const OracionesPage: React.FC = () => {
 
                 <div className={`pt-6 border-t border-white/5 flex items-center justify-between`}>
                   <div className="flex items-center space-x-3">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs ${isOfficial(o) ? 'bg-blue-600 text-white' : 'bg-church-terracotta text-white'}`}>
-                      {o.autor.charAt(0).toUpperCase()}
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs overflow-hidden ${isOfficial(o) ? 'bg-blue-600 text-white' : 'bg-church-terracotta text-white'}`}>
+                      {o.avatar ? (
+                        <img src={getImageUrl(o.avatar)} alt={o.autor} className="w-full h-full object-cover" />
+                      ) : (
+                        o.autor.charAt(0).toUpperCase()
+                      )}
                     </div>
                     <div>
                       <span className="block text-[10px] font-black uppercase tracking-widest text-white/90">{o.autor}</span>
@@ -304,9 +310,15 @@ const OracionesPage: React.FC = () => {
               </div>
               <h2 className="text-4xl md:text-5xl font-serif mb-10 leading-tight text-white">{viewingOracion.titulo}</h2>
               <p className="text-2xl leading-relaxed italic whitespace-pre-wrap text-white/80 font-light mb-12">"{viewingOracion.contenido}"</p>
-              <div className="mt-12 pt-10 border-t border-white/5 flex items-center justify-between">
+               <div className="mt-12 pt-10 border-t border-white/5 flex items-center justify-between">
                 <div className="flex items-center space-x-5">
-                  <div className="w-16 h-16 rounded-2xl bg-church-terracotta text-white flex items-center justify-center font-bold text-2xl shadow-xl">{viewingOracion.autor.charAt(0).toUpperCase()}</div>
+                  <div className={`w-16 h-16 rounded-2xl flex items-center justify-center font-bold text-2xl shadow-xl overflow-hidden ${isOfficial(viewingOracion) ? 'bg-blue-600' : 'bg-church-terracotta'} text-white`}>
+                    {viewingOracion.avatar ? (
+                      <img src={getImageUrl(viewingOracion.avatar)} alt={viewingOracion.autor} className="w-full h-full object-cover" />
+                    ) : (
+                      viewingOracion.autor.charAt(0).toUpperCase()
+                    )}
+                  </div>
                   <div>
                     <span className="block text-xl font-bold text-white mb-1">{viewingOracion.autor}</span>
                     <span className="text-sm text-white/30 uppercase tracking-widest font-black">{new Date(viewingOracion.fecha_creacion).toLocaleDateString()}</span>

@@ -46,6 +46,7 @@ class Blog(db.Model):
             'estado': self.estado,
             'tags': [tag.nombre for tag in self.tags],
             'autor': self.autor.username if self.autor else 'Anónimo',
+            'avatar': self.autor.avatar if self.autor else None,
             'stats_reacciones': stats_reacciones,
             'user_reaccion_ids': user_reaccion_ids,
             'n_comentarios': len([c for c in self.comentarios if c.estado != 3]) # No contar eliminados
