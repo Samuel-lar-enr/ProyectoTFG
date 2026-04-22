@@ -1,9 +1,9 @@
-# Documentación del Proyecto: Plataforma de Gestión Comunitaria (Iglesia)
+# Documentación del Proyecto: Renovación Web - La Vid Verdadera
 
 Este documento detalla la arquitectura, funcionalidades y aspectos técnicos del proyecto final de grado.
 
 ## 1. Resumen y Propósito
-La aplicación es una plataforma integral diseñada para la gestión de una comunidad religiosa. Su objetivo principal es centralizar la comunicación y organización de actividades, permitiendo a los usuarios interactuar a través de blogs, participar en cadenas de oración y gestionar la asistencia a eventos y ministerios (áreas).
+Este proyecto nace con el objetivo principal de renovar y modernizar la presencia digital de la comunidad cristiana **La Vid Verdadera** ([https://iglesialavidverdadera.com/](https://iglesialavidverdadera.com/)). La plataforma resultante es una solución integral diseñada para la gestión comunitaria, centralizando la comunicación y la organización de actividades de la iglesia. Permite a los usuarios interactuar a través de blogs, participar en cadenas de oración y gestionar la asistencia a eventos y ministerios (áreas) con una interfaz moderna y eficiente.
 
 **Funcionalidades clave:**
 - Gestión de ministerios (Áreas) con responsables específicos.
@@ -53,7 +53,7 @@ La aplicación es una plataforma integral diseñada para la gestión de una comu
 
 ## 3. Modelo Entidad-Relación y Tablas
 
-El diseño de la base de datos es relacional y se estructura en torno al usuario y su participación en las distintas áreas de la comunidad.
+El diseño de la base de datos es relacional y se estructura en torno al usuario y su participación en las distintas áreas de la comunidad de La Vid Verdadera.
 
 ### Tablas Principales:
 1.  **usuario**: Almacena credenciales, estado, avatar y preferencias de notificación.
@@ -162,13 +162,58 @@ Se utiliza **Docker Compose** para orquestar los siguientes servicios:
 - **Controladores de Error 500/404**: Personalizados para devolver respuestas JSON estandarizadas al frontend.
 - **Feedback Continuo**: Integración de `Sonner` en el frontend para informar al usuario sobre el éxito o fracaso de cada operación mediante notificaciones visuales no intrusivas.
 
-A continuación se describen las vistas más significativas del proyecto (disponibles en la carpeta de documentación):
 
-- **Vista de Calendario**: Una interfaz limpia con un calendario interactivo donde se resaltan los días con actividades. Al pulsar un día, se despliega la lista de eventos.
-- **Muro de Blogs**: Un layout estilo "grid" con tarjetas elegantes que muestran la imagen del blog, título y reacciones.
-- **Panel de Usuario**: Vista personalizada donde el usuario gestiona sus reservas y recordatorios de oración.
-- **Esquema de Base de Datos**: 
-  ![Esquema Entidad Relación](documentacionImagenes/Esquema-ER.png)
+
+## 8. Sistema de Notificaciones por Correo
+
+La plataforma utiliza un sistema automatizado de correos electrónicos para mantener informada a la comunidad, gestionado a través de `Flask-Mailman` y tareas programadas con `Flask-APScheduler`.
+
+### Correo de Bienvenida
+Notificación enviada automáticamente tras el registro exitoso de un nuevo miembro.
+![Correo de Bienvenida](documentacionImagenes/CorreoDeBienvenida.png)
+
+### Recordatorio de Eventos
+Aviso enviado a los usuarios con reservas activas para recordarles las próximas actividades.
+![Recordatorio de Evento](documentacionImagenes/RecordatorioEvento.png)
+
+### Recordatorio de Oraciones
+Sistema de seguimiento para las peticiones de oración, enviando recordatorios a los usuarios que se comprometieron a orar por otros.
+![Recordatorio de Oraciones](documentacionImagenes/RecordatorioOraciones.png)
 
 ---
 
+## 9. Interfaz de Usuario y Capturas
+
+A continuación se presenta una galería detallada de las principales secciones de la aplicación, destacando el diseño premium y la experiencia de usuario optimizada.
+
+### 9.1 Exploración de Contenido: Blog
+El sistema de blogs permite a la comunidad compartir reflexiones y noticias con un diseño moderno basado en tarjetas dinámicas.
+
+- **Muro de Blogs**: Vista general con filtrado por categorías y búsqueda.
+  ![Muro de Blogs](documentacionImagenes/PaginaBlogs.png)
+
+- **Detalle de Blog**: Lectura inmersiva con soporte para comentarios y reacciones en tiempo real.
+  ![Detalle de Blog 1](documentacionImagenes/PaginaBlogDetail1.png)
+  ![Detalle de Blog 2](documentacionImagenes/PaginaBlogDetail2.png)
+
+### 9.2 Comunidad y Actividades
+Gestión interactiva de eventos y muro de oraciones, facilitando la participación activa de los miembros.
+
+- **Calendario de Eventos**: Interfaz intuitiva para la visualización de actividades programadas y reserva de plazas.
+  ![Calendario de Eventos](documentacionImagenes/PaginaEventos.png)
+
+- **Muro de Oraciones**: Espacio dedicado a las peticiones de la comunidad con sistema de compromiso de oración.
+  ![Muro de Oraciones](documentacionImagenes/PaginaOraciones.png)
+
+### 9.3 Gestión de Áreas y Ministerios
+Cada ministerio cuenta con su propio espacio donde se detallan sus objetivos, responsables y actividades específicas.
+
+- **Detalle de Área**: Información completa sobre un ministerio, incluyendo galería de miembros y eventos vinculados.
+  ![Detalle de Área](documentacionImagenes/PaginaAreaDetail.png)
+
+---
+
+## 10. Conclusión
+Este proyecto representa la renovación tecnológica de la presencia online de **La Vid Verdadera**, ofreciendo una solución moderna y escalable para la gestión de su comunidad. Integra las mejores prácticas de desarrollo web tanto en frontend como en backend para asegurar una experiencia premium a todos sus miembros.
+
+---
