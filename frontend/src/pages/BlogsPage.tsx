@@ -314,6 +314,7 @@ const BlogsPage: React.FC = () => {
 
   const handleEditInit = (e: React.MouseEvent, blog: Blog) => {
     e.stopPropagation();
+    setViewingBlog(null); // Cerrar vista detalle si estaba abierta
     setEditingBlog(blog);
     setBlogData({
       titulo: blog.titulo,
@@ -322,6 +323,20 @@ const BlogsPage: React.FC = () => {
       tags: blog.tags
     });
     setShowModal(true);
+  };
+
+  const handleDeleteBlog = async (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
+    if (!window.confirm('¿Estás seguro de que deseas eliminar este post? Esta acción no se puede deshacer.')) return;
+    
+    try {
+      await api.delete(`/blogs/${id}`);
+      setViewingBlog(null);
+      fetchBlogs();
+      toast.success('Entrada eliminada correctamente');
+    } catch (error) {
+      toast.error('Error al eliminar la entrada');
+    }
   };
 
   const handleCreateComentario = async (idPadre: number | null = null) => {
@@ -530,7 +545,27 @@ const BlogsPage: React.FC = () => {
         <div className="fixed inset-0 z-50 bg-white overflow-y-auto animate-in slide-in-from-right duration-500">
           <div className="min-h-screen flex flex-col items-center">
             <div className="max-w-4xl w-full py-20 px-8 relative">
-              <button onClick={() => setViewingBlog(null)} className="fixed top-8 right-8 md:top-12 md:right-12 p-4 bg-gray-50 rounded-full hover:bg-gray-100 transition-all font-bold z-50 shadow-sm border border-gray-100">✕</button>
+              <div className="fixed top-8 right-8 md:top-12 md:right-12 flex space-x-2 z-50">
+                {user?.id === viewingBlog.id_user && (
+                  <>
+                    <button 
+                      onClick={(e) => handleEditInit(e, viewingBlog)} 
+                      className="p-4 bg-white/90 backdrop-blur rounded-full hover:bg-church-olive hover:text-white transition-all font-bold shadow-sm border border-gray-100 text-church-olive"
+                      title="Editar post"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                    </button>
+                    <button 
+                      onClick={(e) => handleDeleteBlog(e, viewingBlog.id)} 
+                      className="p-4 bg-white/90 backdrop-blur rounded-full hover:bg-red-600 hover:text-white transition-all font-bold shadow-sm border border-gray-100 text-red-500"
+                      title="Eliminar post"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                  </>
+                )}
+                <button onClick={() => setViewingBlog(null)} className="p-4 bg-gray-50 rounded-full hover:bg-gray-100 transition-all font-bold shadow-sm border border-gray-100">✕</button>
+              </div>
               
               <header className="mb-12">
                 <div className="flex flex-wrap gap-2 mb-8 uppercase tracking-widest text-[10px] font-black text-church-terracotta">
