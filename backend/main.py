@@ -12,8 +12,12 @@ from controllers import register_blueprints
 from flask_apscheduler import APScheduler
 from datetime import datetime, timedelta
 
-# Cargar variables de entorno desde el .env de la raíz
-load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
+# Cargar variables de entorno (Intenta local y raíz para compatibilidad con Docker)
+env_path = os.path.join(os.path.dirname(__file__), '..', '.env')
+if os.path.exists(env_path):
+    load_dotenv(env_path)
+else:
+    load_dotenv() # Carga desde el directorio actual si no existe en la raíz
 
 app = Flask(__name__)
 # Aplicar ProxyFix para que Flask reconozca HTTPS detrás del proxy de Railway
@@ -28,15 +32,20 @@ os.makedirs(os.path.join(uploads_dir, 'avatars'), exist_ok=True)
 os.makedirs(os.path.join(uploads_dir, 'blogs'), exist_ok=True)
 os.makedirs(os.path.join(uploads_dir, 'areas'), exist_ok=True)
 
-# Permitir orígenes para CORS (Local y Producción)
-CORS(app, supports_credentials=True, origins=[
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
-    'http://localhost:5174',
-    'http://127.0.0.1:5174',
-    'https://proyecto-tfg-seven.vercel.app'
-], methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], 
-   allow_headers=["Content-Type", "Authorization", "X-Requested-With", "Accept"])
+# Configurar CORS para todas las rutas
+ALLOWED_ORIGINS = [
+    "http://localhost",
+    "http://127.0.0.1",
+    "http://localhost:80",
+    "http://127.0.0.1:80",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+    "https://proyecto-tfg-seven.vercel.app"
+]
+
+CORS(app, supports_credentials=True, resources={r"/*": {"origins": ALLOWED_ORIGINS}})
 
 # Desactivar strict_slashes globalmente para evitar redirecciones que rompen CORS
 app.url_map.strict_slashes = False
@@ -206,7 +215,7 @@ register_blueprints(app)
 from flask_cors import cross_origin
 
 @app.errorhandler(500)
-@cross_origin(supports_credentials=True, origins=['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5174', 'http://127.0.0.1:5174', 'https://proyecto-tfg-seven.vercel.app'])
+@cross_origin(supports_credentials=True, origins=ALLOWED_ORIGINS)
 def handle_500(e):
     return jsonify({
         'status': 'error',
