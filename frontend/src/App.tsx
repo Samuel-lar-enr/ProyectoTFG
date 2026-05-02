@@ -4,6 +4,7 @@ import { Toaster } from 'sonner';
 import { DashboardProvider } from './context/DashboardContext';
 import AppRoutes from './routes/AppRoutes';
 import { UIProvider } from './context/UIContext';
+import ScrollToTop from './components/ScrollToTop';
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
         <UIProvider>
           <DashboardProvider>
             <Toaster position="top-right" richColors closeButton />
+            <ScrollToTop />
             <AppRoutes />
           </DashboardProvider>
         </UIProvider>

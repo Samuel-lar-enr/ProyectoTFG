@@ -2,10 +2,28 @@
 
 ## Enlaces
 -web "original": ([https://iglesialavidverdadera.com/](https://iglesialavidverdadera.com/))
--web "nueva": ([https://iglesialavidverdadera.com/](https://iglesialavidverdadera.com/))
+-web "nueva": ([https://proyecto-tfg-seven.vercel.app/](https://proyecto-tfg-seven.vercel.app))
 -github: ([https://github.com/Samuel-2004/ProyectoTFG](https://github.com/Samuel-2004/ProyectoTFG))
 
 Este documento detalla la arquitectura, funcionalidades y aspectos técnicos del proyecto final de grado.
+
+## Índice
+1. [Resumen y Propósito](#1-resumen-y-propósito)
+2. [Tecnologías Utilizadas](#2-tecnologías-utilizadas)
+3. [Modelo Entidad-Relación y Tablas](#3-modelo-entidad-relación-y-tablas)
+4. [Roles de Usuario](#4-roles-de-usuario)
+5. [Casos de Uso (Perspectiva de Rol)](#5-casos-de-uso-perspectiva-de-rol)
+6. [Despliegue y Dockerización](#6-despliegue-y-dockerización)
+    - [6.1 Despliegue en la Nube (Railway & Vercel)](#61-despliegue-en-la-nube-railway--vercel)
+7. [Seguridad y Gestión de Errores](#7-seguridad-y-gestión-de-errores)
+8. [Sistema de Notificaciones por Correo](#8-sistema-de-notificaciones-por-correo)
+9. [Interfaz de Usuario y Capturas](#9-interfaz-de-usuario-y-capturas)
+    - [9.1 Exploración de Contenido: Blog](#91-exploración-de-contenido-blog)
+    - [9.2 Comunidad y Actividades](#92-comunidad-y-actividades)
+    - [9.3 Gestión de Áreas y Ministerios](#93-gestión-de-áreas-y-ministerios)
+    - [9.4 Perfil y Área Personal](#94-perfil-y-área-personal)
+    - [9.5 Optimización Móvil y UX](#95-optimización-móvil-y-ux)
+10. [Conclusión](#10-conclusión)
 
 ## 1. Resumen y Propósito
 Este proyecto nace con el objetivo principal de renovar y modernizar la presencia digital de la comunidad cristiana **La Vid Verdadera** ([https://iglesialavidverdadera.com/](https://iglesialavidverdadera.com/)). La plataforma resultante es una solución integral diseñada para la gestión comunitaria, centralizando la comunicación y la organización de actividades de la iglesia. Permite a los usuarios interactuar a través de blogs, participar en cadenas de oración y gestionar la asistencia a eventos y ministerios (áreas) con una interfaz moderna y eficiente.
@@ -21,6 +39,9 @@ Este proyecto nace con el objetivo principal de renovar y modernizar la presenci
 - Sistema de restablecimiento de contraseña mediante tokens seguros enviados por correo electrónico.
 - Dashboard integral para la edición, moderación y gestión de la plataforma.
 - Interfaz optimizada para su visualización en dispositivos móviles, tablets y ordenadores de escritorio.
+- Sistema de navegación inteligente con control de scroll automático al cambiar de página.
+- Menú móvil tipo "hamburguesa" para un acceso rápido a todas las secciones desde smartphones.
+- Optimización de filtros y categorías mediante desplazamiento horizontal en dispositivos táctiles.
 ---
 
 ## 2. Tecnologías Utilizadas
@@ -173,6 +194,19 @@ Se utiliza **Docker Compose** para orquestar los siguientes servicios:
     ```
 4.  El backend estará disponible en `localhost:5000` y el frontend en `localhost:80`.
 
+### 6.1 Despliegue en la Nube (Railway & Vercel)
+Además del entorno local con Docker, el proyecto está configurado para un despliegue profesional en la nube:
+
+#### Backend: Railway
+- **Plataforma**: Se utiliza [Railway](https://railway.app/) para alojar la API Flask y la base de datos MariaDB.
+- **Configuración HTTPS**: Se ha implementado `ProxyFix` de *Werkzeug* para asegurar que Flask reconozca correctamente los protocolos seguros detrás del proxy inverso de Railway.
+- **Persistencia**: La base de datos está vinculada directamente al servicio, garantizando la integridad de los datos entre despliegues.
+
+#### Frontend: Vercel
+- **Plataforma**: Se utiliza [Vercel](https://vercel.com/) para el hosting del frontend React/Vite.
+- **Manejo de Rutas (SPA)**: Se incluye un archivo `vercel.json` con reglas de `rewrites` para redirigir todas las rutas al `index.html`, permitiendo que el enrutamiento de *React Router* funcione correctamente.
+- **Variables de Entorno**: La variable `VITE_API_URL` apunta dinámicamente al dominio de producción en Railway.
+
 ---
 
 ## 7. Seguridad y Gestión de Errores
@@ -243,6 +277,16 @@ Los usuarios disponen de un panel privado para gestionar su identidad, visualiza
 
 - **Perfil Personal**: Vista donde el usuario puede editar su información, gestionar su avatar y revisar su historial de oración y eventos.
   ![Perfil Personal](documentacionImagenes/PaginaPerfilPersonal.png)
+
+---
+
+### 9.5 Optimización Móvil y UX
+La aplicación ha sido sometida a un proceso de refinamiento para ofrecer una experiencia nativa en navegadores móviles:
+
+- **Navegación Fluida**: Implementación de un menú lateral (drawer) con efecto de desenfoque de fondo para facilitar el acceso a las secciones principales sin recargar la página.
+- **Control de Scroll**: Integración de un sistema de "Scroll to Top" automático que garantiza que el usuario siempre comience en la parte superior al navegar entre detalles de áreas o eventos.
+- **Filtros Horizontales**: Las categorías de eventos, blogs y oraciones utilizan ahora un sistema de desplazamiento horizontal (`overflow-x-auto`) que ahorra hasta un 60% de espacio vertical en pantallas pequeñas.
+- **Ajustes de Layout**: Centrado dinámico de títulos y secciones críticas (como "Áreas de Trabajo") y redimensionamiento inteligente de campos de búsqueda y botones interactivos.
 
 ---
 

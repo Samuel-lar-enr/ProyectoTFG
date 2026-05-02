@@ -1,7 +1,8 @@
 import secrets
 from datetime import datetime, timedelta
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 from flask_login import login_user, logout_user, login_required, current_user
+from sqlalchemy import text
 from models import db, Usuario
 from services.email_service import send_welcome_email, send_password_reset_email
 
@@ -19,28 +20,15 @@ def register():
     if not username or not email or not password:
         return jsonify({'status': 'error', 'message': 'Faltan datos obligatorios'}), 400
 
-    from sqlalchemy import text
-    
-    # Comprobar si el email ya existe usando SQL puro
+    # Comprobar si el email o username ya existen
     try:
-        user_by_email = db.session.execute(
-            text("SELECT id FROM usuario WHERE email = :email"),
-            {"email": email}
-        ).fetchone()
+        if Usuario.query.filter_by(email=email).first():
+            return jsonify({'status': 'error', 'message': 'El email ya está registrado'}), 400
         
-        if user_by_email:
-            return jsonify({'status': 'error', 'message': 'El email ya esta registrado'}), 400
-        
-        # Comprobar si el username ya existe
-        user_by_username = db.session.execute(
-            text("SELECT id FROM usuario WHERE username = :username"),
-            {"username": username}
-        ).fetchone()
-        
-        if user_by_username:
+        if Usuario.query.filter_by(username=username).first():
             return jsonify({'status': 'error', 'message': 'El nombre de usuario ya existe'}), 400
     except Exception as e:
-        print(f"DEBUG: SQL Error on checks: {e}")
+        print(f"DEBUG: Error on checks: {e}")
         return jsonify({'status': 'error', 'message': 'Error de base de datos'}), 500
 
     try:
@@ -53,21 +41,27 @@ def register():
         db.session.add(new_usuario)
         db.session.commit()
         
-        # Opcional: Login automático tras registro
-        from flask import session
+        # Login automático tras registro
         session.permanent = True
-        login_user(new_usuario)
+        login_user(new_usuario, remember=True)
         
-        # Enviar email de bienvenida
-        send_welcome_email(email, username)
+        # Obtener dict ligero para responder rápido
+        user_data = new_usuario.to_dict_light()
+        
+        # Enviar email de bienvenida en segundo plano
+        try:
+            send_welcome_email(email, username)
+        except Exception as e:
+            print(f"Error al iniciar envío de email: {e}")
         
         return jsonify({
             'status': 'success', 
             'message': 'Usuario registrado y logueado correctamente',
-            'user': new_usuario.to_dict()
+            'user': user_data
         }), 201
     except Exception as e:
         db.session.rollback()
+        print(f"DEBUG: Error during registration: {e}")
         return jsonify({'status': 'error', 'message': str(e)}), 400
 
 @auth_bp.route('/login', methods=['POST'])
@@ -92,7 +86,7 @@ def login():
     if usuario and usuario.check_password(password):
         from flask import session
         session.permanent = True
-        login_user(usuario)
+        login_user(usuario, remember=True)
         return jsonify({
             'status': 'success', 
             'message': 'Login exitoso',

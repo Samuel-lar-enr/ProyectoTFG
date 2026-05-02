@@ -468,17 +468,17 @@ const BlogsPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 mb-12 border-b pb-8">
-           <button onClick={() => setActiveFilter(null)} className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${activeFilter === null ? 'bg-church-olive text-white shadow-lg' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}>TODOS</button>
+        <div className="flex flex-nowrap items-center gap-3 mb-12 border-b pb-4 overflow-x-auto scrollbar-hide -mx-2 px-2">
+           <button onClick={() => setActiveFilter(null)} className={`px-4 py-2 rounded-full text-xs font-bold transition-all shrink-0 ${activeFilter === null ? 'bg-church-olive text-white shadow-lg' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}>TODOS</button>
            <button 
               onClick={() => setActiveFilter(activeFilter === 'OFICIAL' ? null : 'OFICIAL')} 
-              className={`px-4 py-2 rounded-full text-xs font-bold transition-all border flex items-center gap-2 ${activeFilter === 'OFICIAL' ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-blue-50 border-blue-100 text-blue-400 hover:bg-blue-100'}`}
+              className={`px-4 py-2 rounded-full text-xs font-bold transition-all border flex items-center gap-2 shrink-0 ${activeFilter === 'OFICIAL' ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-blue-50 border-blue-100 text-blue-400 hover:bg-blue-100'}`}
            >
               <span className="w-2 h-2 rounded-full bg-current animate-pulse"></span>
               OFICIAL
            </button>
            {blogTags.map(tag => (
-              <button key={tag.id} onClick={() => setActiveFilter(activeFilter === tag.nombre ? null : tag.nombre)} className={`px-4 py-2 rounded-full text-xs font-bold transition-all border ${activeFilter === tag.nombre ? 'bg-church-terracotta border-church-terracotta text-white shadow-lg' : 'bg-white border-gray-200 text-gray-400'}`}>
+              <button key={tag.id} onClick={() => setActiveFilter(activeFilter === tag.nombre ? null : tag.nombre)} className={`px-4 py-2 rounded-full text-xs font-bold transition-all border shrink-0 ${activeFilter === tag.nombre ? 'bg-church-terracotta border-church-terracotta text-white shadow-lg' : 'bg-white border-gray-200 text-gray-400'}`}>
                 {tag.nombre.toUpperCase()}
               </button>
            ))}

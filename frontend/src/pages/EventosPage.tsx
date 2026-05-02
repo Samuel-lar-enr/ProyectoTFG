@@ -281,24 +281,26 @@ const EventosPage: React.FC = () => {
         </div>
 
         {/* Filtros dinámicos */}
-        <div className="flex flex-wrap items-center gap-4 mb-10 overflow-x-auto pb-2 scrollbar-hide">
-          <button 
-            onClick={() => setActiveAreaFilter(null)}
-            className={`px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all shadow-sm ${!activeAreaFilter ? 'bg-church-olive text-white' : 'bg-white text-church-olive hover:bg-church-beige'}`}
-          >
-            Todos
-          </button>
-          {areasList.map(area => (
+        <div className="mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+          <div className="flex flex-nowrap items-center gap-3 overflow-x-auto pb-4 scrollbar-hide -mx-2 px-2 flex-1">
             <button 
-              key={area.id}
-              onClick={() => setActiveAreaFilter(area.id)}
-              className={`px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all shadow-sm ${activeAreaFilter === area.id ? 'bg-church-olive text-white' : 'bg-white text-church-olive hover:bg-church-beige'}`}
+              onClick={() => setActiveAreaFilter(null)}
+              className={`px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all shadow-sm shrink-0 ${!activeAreaFilter ? 'bg-church-olive text-white' : 'bg-white text-church-olive hover:bg-church-beige'}`}
             >
-              {area.nombre}
+              Todos
             </button>
-          ))}
+            {areasList.map(area => (
+              <button 
+                key={area.id}
+                onClick={() => setActiveAreaFilter(area.id)}
+                className={`px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all shadow-sm shrink-0 ${activeAreaFilter === area.id ? 'bg-church-olive text-white' : 'bg-white text-church-olive hover:bg-church-beige'}`}
+              >
+                {area.nombre}
+              </button>
+            ))}
+          </div>
           
-          <div className="flex items-center ml-auto bg-white px-4 py-2 rounded-full shadow-sm border border-gray-100">
+          <div className="flex items-center self-end sm:self-auto bg-white px-4 py-2 rounded-full shadow-sm border border-gray-100 shrink-0">
             <span className="text-[10px] font-bold text-gray-400 mr-3 uppercase tracking-wider">Ver Pasados</span>
             <button 
               onClick={() => setShowPastEvents(!showPastEvents)}

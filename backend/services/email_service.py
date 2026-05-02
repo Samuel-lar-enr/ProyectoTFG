@@ -1,8 +1,16 @@
 import os
+import threading
 from flask_mailman import EmailMessage
 from flask import current_app
 
-def send_email(subject, recipient, body, html=None):
+def send_email_task(app, msg):
+    with app.app_context():
+        try:
+            msg.send()
+        except Exception as e:
+            print(f"Error enviando email en segundo plano: {str(e)}")
+
+def send_email(subject, recipient, body, html=None, background=True):
     """
     Función genérica para enviar correos electrónicos.
     """
@@ -17,17 +25,23 @@ def send_email(subject, recipient, body, html=None):
             msg.content_subtype = "html"
             msg.body = html
         
-        msg.send()
-        return True
+        if background:
+            # Enviar en un hilo separado para no bloquear la respuesta
+            thread = threading.Thread(target=send_email_task, args=(current_app._get_current_object(), msg))
+            thread.start()
+            return True
+        else:
+            msg.send()
+            return True
     except Exception as e:
-        print(f"Error enviando email: {str(e)}")
+        print(f"Error preparando email: {str(e)}")
         return False
 
 def send_welcome_email(user_email, username):
     subject = "¡Bienvenido al Proyecto TFG Iglesia!"
     body = f"Hola {username}, gracias por registrarte en nuestra plataforma."
     html = f"<h1>¡Bienvenido, {username}!</h1><p>Gracias por registrarte en nuestra plataforma del Proyecto TFG Iglesia.</p>"
-    return send_email(subject, user_email, body, html)
+    return send_email(subject, user_email, body, html, background=True)
 
 def send_password_reset_email(user_email, token):
     frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:5173')
@@ -49,5 +63,5 @@ def send_password_reset_email(user_email, token):
         <p style="font-size: 0.8em; color: #777;">Si no has solicitado este cambio, por favor ignora este correo. Tu contraseña seguirá siendo la misma.</p>
     </div>
     """.replace("{{reset_url}}", reset_url)
-    return send_email(subject, user_email, body, html)
+    return send_email(subject, user_email, body, html, background=True)
 

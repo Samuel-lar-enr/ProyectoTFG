@@ -144,12 +144,12 @@ const Home: React.FC = () => {
       {/* Áreas de Trabajo (Ministerios) */}
       <section id="ministerios" className="bg-church-beige">
         <div className="section-container">
-          <div className="flex flex-col md:flex-row items-end justify-between mb-16 gap-4">
-            <div className="text-left">
+          <div className="flex flex-col md:flex-row items-center md:items-end justify-between mb-16 gap-4">
+            <div className="text-center md:text-left">
               <span className="text-church-terracotta font-bold uppercase tracking-[.3em] text-xs mb-4 block">Ministerios</span>
               <h2 className="text-4xl font-serif text-church-olive">Áreas de Trabajo</h2>
             </div>
-            <p className="text-gray-500 max-w-md md:text-right">Desarrollamos nuestra labor social y espiritual a través de diferentes grupos enfocados en cada necesidad.</p>
+            <p className="text-gray-500 max-w-md text-center md:text-right">Desarrollamos nuestra labor social y espiritual a través de diferentes grupos enfocados en cada necesidad.</p>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

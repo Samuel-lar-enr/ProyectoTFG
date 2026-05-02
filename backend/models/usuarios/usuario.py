@@ -35,8 +35,12 @@ class Usuario(db.Model, UserMixin):
         self.avatar = avatar
         self.notificaciones = notificaciones
 
-    def to_dict(self):
-        return {
+    def to_dict(self, light=False):
+        """
+        Serializa el usuario a un diccionario. 
+        Si light=True, solo devuelve los campos básicos sin cargar relaciones pesadas.
+        """
+        data = {
             'id': self.id,
             'username': self.username,
             'email': self.email,
@@ -44,28 +48,42 @@ class Usuario(db.Model, UserMixin):
             'avatar': self.avatar,
             'notificaciones': self.notificaciones,
             'fecha_creacion': self.fecha_creacion.isoformat() if self.fecha_creacion else None,
-            'roles': [role.nombre for role in self.roles],
-            'mis_blogs': [blog.to_dict() for blog in self.blogs if blog.estado == 1],
-            'mis_oraciones': [ora.to_dict() for ora in self.oraciones],
-            'mis_reservas': [{
+        }
+        
+        if light:
+            return data
+
+        # Campos que requieren cargar relaciones (solo si no es modo light)
+        try:
+            data['roles'] = [role.nombre for role in self.roles]
+            data['mis_blogs'] = [blog.to_dict() for blog in self.blogs if blog.estado == 1]
+            data['mis_oraciones'] = [ora.to_dict() for ora in self.oraciones]
+            data['mis_reservas'] = [{
                 'id': res.id,
                 'id_evento': res.id_evento,
                 'titulo_evento': res.evento.titulo,
                 'fecha_evento': res.evento.fecha_inicio.isoformat(),
                 'estado': res.estado
-            } for res in self.reservas if res.estado == 1],
-            'mis_recordatorios': [{
+            } for res in self.reservas if res.estado == 1]
+            data['mis_recordatorios'] = [{
                 'id': rec.id,
                 'id_oracion': rec.id_oracion,
                 'titulo_oracion': rec.oracion.titulo,
                 'autor_oracion': rec.oracion.usuario.username
-            } for rec in self.recordatorios if rec.oracion.estado == 1],
-            'mis_puestos': [{
+            } for rec in self.recordatorios if rec.oracion.estado == 1]
+            data['mis_puestos'] = [{
                 'id': p.id,
                 'id_area': p.id_area,
                 'estado': p.estado
             } for p in self.puestos if p.estado == 1]
-        }
+        except Exception as e:
+            print(f"Error serializando relaciones de usuario: {e}")
+            # Si algo falla al cargar relaciones, devolvemos lo que tenemos
+        
+        return data
+
+    def to_dict_light(self):
+        return self.to_dict(light=True)
 
     #funciones
 

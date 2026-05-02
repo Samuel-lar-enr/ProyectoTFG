@@ -162,34 +162,34 @@ const OracionesPage: React.FC = () => {
             <span className="text-church-terracotta font-black uppercase tracking-widest text-[10px] mb-3 block">Muro de Intercesión</span>
             <h1 className="text-4xl md:text-5xl font-serif text-white">Cadena de Oración</h1>
           </div>
-          <div className="flex items-center space-x-4">
-             <div className="relative">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+             <div className="relative flex-grow">
                 <input 
                   type="text" 
                   placeholder="Buscar peticiones..." 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-3 bg-white/5 border-none rounded-xl text-white text-sm focus:ring-2 focus:ring-church-terracotta/50 transition-all w-64 shadow-inner"
+                  className="pl-10 pr-4 py-3 bg-white/5 border-none rounded-xl text-white text-sm focus:ring-2 focus:ring-church-terracotta/50 transition-all w-full sm:w-64 shadow-inner"
                 />
                 <svg className="w-4 h-4 absolute left-3 top-3.5 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
              </div>
-             <button onClick={() => { setEditingOracion(null); setFormOracion({titulo:'', contenido:'', tags:[], duracion_dias:30, anonima:false}); setShowModal(true); }} className="bg-church-terracotta text-white px-8 py-3 rounded-xl font-bold uppercase tracking-widest hover:bg-church-terracotta/90 transition-all shadow-xl text-sm">
+             <button onClick={() => { setEditingOracion(null); setFormOracion({titulo:'', contenido:'', tags:[], duracion_dias:30, anonima:false}); setShowModal(true); }} className="bg-church-terracotta text-white px-6 py-3 rounded-xl font-bold uppercase tracking-widest hover:bg-church-terracotta/90 transition-all shadow-xl text-xs sm:text-sm whitespace-nowrap">
                 Pedir Oración
              </button>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 mb-12 border-b pb-8">
-           <button onClick={() => setActiveFilter(null)} className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${activeFilter === null ? 'bg-church-olive text-white shadow-lg' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}>TODOS</button>
+        <div className="flex flex-nowrap items-center gap-3 mb-12 border-b pb-4 overflow-x-auto scrollbar-hide -mx-2 px-2">
+           <button onClick={() => setActiveFilter(null)} className={`px-4 py-2 rounded-full text-xs font-bold transition-all shrink-0 ${activeFilter === null ? 'bg-church-olive text-white shadow-lg' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}>TODOS</button>
            <button 
               onClick={() => setActiveFilter(activeFilter === 'OFICIAL' ? null : 'OFICIAL')} 
-              className={`px-4 py-2 rounded-full text-xs font-bold transition-all border flex items-center gap-2 ${activeFilter === 'OFICIAL' ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-blue-50 border-blue-100 text-blue-400 hover:bg-blue-100'}`}
+              className={`px-4 py-2 rounded-full text-xs font-bold transition-all border flex items-center gap-2 shrink-0 ${activeFilter === 'OFICIAL' ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-blue-50 border-blue-100 text-blue-400 hover:bg-blue-100'}`}
            >
               <span className="w-2 h-2 rounded-full bg-current animate-pulse"></span>
               OFICIAL
            </button>
            {oracionTags.map(tag => (
-              <button key={tag.id} onClick={() => setActiveFilter(activeFilter === tag.nombre ? null : tag.nombre)} className={`px-4 py-2 rounded-full text-xs font-bold transition-all border ${activeFilter === tag.nombre ? 'bg-church-terracotta border-church-terracotta text-white shadow-lg shadow-church-terracotta/20' : 'bg-white/5 border-transparent text-white/40 hover:bg-white/10'}`}>
+              <button key={tag.id} onClick={() => setActiveFilter(activeFilter === tag.nombre ? null : tag.nombre)} className={`px-4 py-2 rounded-full text-xs font-bold transition-all border shrink-0 ${activeFilter === tag.nombre ? 'bg-church-terracotta border-church-terracotta text-white shadow-lg shadow-church-terracotta/20' : 'bg-white/5 border-transparent text-white/40 hover:bg-white/10'}`}>
                 {tag.nombre.toUpperCase()}
               </button>
            ))}

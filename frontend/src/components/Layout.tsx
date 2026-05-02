@@ -9,6 +9,11 @@ const Layout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -19,6 +24,7 @@ const Layout: React.FC = () => {
   }, []);
 
   const handleLogout = async () => {
+    setIsMenuOpen(false);
     await logout();
     navigate('/login');
   };
@@ -27,7 +33,7 @@ const Layout: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-church-beige">
-      <header className={`fixed top-0 w-full z-50 transition-all duration-300 ${isDarkNav ? 'bg-white shadow-md py-3' : 'bg-transparent py-5'}`}>
+      <header className={`fixed top-0 w-full z-[100] transition-all duration-300 ${isDarkNav ? 'bg-white shadow-md py-3' : 'bg-transparent py-5'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           <div className="flex items-center space-x-10">
             <Link to="/" className="flex items-center space-x-2 group">
@@ -81,46 +87,119 @@ const Layout: React.FC = () => {
           <div className="flex items-center space-x-6">
             {isAuthenticated ? (
               <div className="flex items-center space-x-4">
-                <Link to="/perfil" className="hidden sm:flex flex-col items-end mr-1 group-hover:opacity-80 transition-opacity">
+                <Link to="/perfil" className="hidden lg:flex flex-col items-end mr-1 group-hover:opacity-80 transition-opacity">
                   <span className={`text-xs font-bold ${isDarkNav ? 'text-gray-900' : 'text-white'}`}>{user?.username}</span>
                   <span className={`text-[10px] ${isDarkNav ? 'text-gray-500' : 'text-white/70'}`}>{user?.email}</span>
                 </Link>
                 <Link to="/perfil" className="relative group/avatar">
                   {user?.avatar ? (
-                    <img src={getImageUrl(user.avatar)} alt="Avatar" className="w-9 h-9 rounded-full border border-gray-100 object-cover transition-transform group-hover/avatar:scale-110" />
+                    <img src={getImageUrl(user.avatar)} alt="Avatar" className="w-8 h-8 md:w-9 md:h-9 rounded-full border border-gray-100 object-cover transition-transform group-hover/avatar:scale-110" />
                   ) : (
-                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold border transition-all group-hover/avatar:scale-110 ${isDarkNav ? 'bg-church-olive text-white border-church-olive' : 'bg-white/20 text-white border-white/30'}`}>
+                    <div className={`w-8 h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center text-xs font-bold border transition-all group-hover/avatar:scale-110 ${isDarkNav ? 'bg-church-olive text-white border-church-olive' : 'bg-white/20 text-white border-white/30'}`}>
                       {user?.username?.charAt(0).toUpperCase()}
                     </div>
                   )}
-                  <div className="absolute -bottom-1 -right-1 bg-church-terracotta text-white rounded-full p-0.5 opacity-0 group-hover/avatar:opacity-100 transition-opacity shadow-sm">
-                    <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                  </div>
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className={`text-xs font-bold uppercase tracking-widest px-4 py-2 rounded transition-all border ${isDarkNav ? 'text-church-dark border-gray-300 hover:bg-gray-50' : 'text-white border-white/30 hover:bg-white/10'}`}
+                  className={`hidden md:block text-xs font-bold uppercase tracking-widest px-4 py-2 rounded transition-all border ${isDarkNav ? 'text-church-dark border-gray-300 hover:bg-gray-50' : 'text-white border-white/30 hover:bg-white/10'}`}
                 >
                   Salir
                 </button>
               </div>
             ) : (
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2 md:space-x-4">
                 <Link
                   to="/login"
-                  className={`text-sm font-bold uppercase tracking-wider transition-colors ${isDarkNav ? 'text-gray-700 hover:text-church-terracotta' : 'text-white hover:text-white/80'}`}
+                  className={`text-xs md:text-sm font-bold uppercase tracking-wider transition-colors ${isDarkNav ? 'text-gray-700 hover:text-church-terracotta' : 'text-white hover:text-white/80'}`}
                 >
                   Entrar
                 </Link>
                 <Link
                   to="/register"
-                  className={`text-sm font-bold uppercase tracking-wider px-5 py-2.5 rounded transition-all shadow-sm ${isDarkNav ? 'bg-church-terracotta text-white hover:bg-church-terracotta/90' : 'bg-white text-church-olive hover:bg-gray-100'}`}
+                  className={`text-[10px] md:text-sm font-bold uppercase tracking-wider px-3 md:px-5 py-2 md:py-2.5 rounded transition-all shadow-sm ${isDarkNav ? 'bg-church-terracotta text-white hover:bg-church-terracotta/90' : 'bg-white text-church-olive hover:bg-gray-100'}`}
                 >
                   Registro
                 </Link>
               </div>
             )}
+
+            {/* Hamburger Button */}
+            <button 
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className={`md:hidden p-2 rounded-lg transition-colors ${isDarkNav ? 'text-church-olive hover:bg-gray-100' : 'text-white hover:bg-white/10'}`}
+              aria-label="Toggle menu"
+            >
+              {isMenuOpen ? (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              ) : (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+              )}
+            </button>
           </div>
+        </div>
+
+        {/* Mobile Menu Overlay */}
+        <div className={`md:hidden fixed inset-0 z-[110] transition-all duration-500 ${isMenuOpen ? 'visible' : 'invisible'}`}>
+          {/* Backdrop */}
+          <div 
+            className={`absolute inset-0 bg-church-olive/40 backdrop-blur-sm transition-opacity duration-500 ${isMenuOpen ? 'opacity-100' : 'opacity-0'}`}
+            onClick={() => setIsMenuOpen(false)}
+          />
+          
+          {/* Menu Panel */}
+          <nav className={`absolute right-0 top-0 h-full w-4/5 max-w-sm bg-white shadow-2xl p-8 flex flex-col transition-transform duration-500 transform ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+            <div className="flex items-center justify-between mb-10">
+              <span className="text-xl font-serif font-bold text-church-olive">Menu</span>
+              <button onClick={() => setIsMenuOpen(false)} className="p-2 text-gray-400 hover:text-church-olive transition-colors">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+
+            <div className="flex flex-col space-y-6">
+              <Link to="/" className="text-lg font-bold text-gray-800 hover:text-church-terracotta transition-colors flex items-center gap-4">
+                <span className="w-8 h-8 flex items-center justify-center bg-church-beige rounded-lg text-sm">🏠</span> Inicio
+              </Link>
+              <Link to="/blog" className="text-lg font-bold text-gray-800 hover:text-church-terracotta transition-colors flex items-center gap-4">
+                <span className="w-8 h-8 flex items-center justify-center bg-church-beige rounded-lg text-sm">📝</span> Blogs
+              </Link>
+              <Link to="/eventos" className="text-lg font-bold text-gray-800 hover:text-church-terracotta transition-colors flex items-center gap-4">
+                <span className="w-8 h-8 flex items-center justify-center bg-church-beige rounded-lg text-sm">📅</span> Eventos
+              </Link>
+              
+              {isAuthenticated ? (
+                <>
+                  <Link to="/oraciones" className="text-lg font-bold text-gray-800 hover:text-church-terracotta transition-colors flex items-center gap-4">
+                    <span className="w-8 h-8 flex items-center justify-center bg-church-beige rounded-lg text-sm">🙏</span> Oraciones
+                  </Link>
+                  <Link to="/perfil" className="text-lg font-bold text-gray-800 hover:text-church-terracotta transition-colors flex items-center gap-4">
+                    <span className="w-8 h-8 flex items-center justify-center bg-church-beige rounded-lg text-sm">👤</span> Mi Perfil
+                  </Link>
+                  
+                  {user?.roles && (user.roles.includes('administrador') || user.roles.includes('pastor')) && (
+                    <div className="pt-6 mt-6 border-t border-gray-100 space-y-4">
+                       <span className="text-xs font-black uppercase tracking-widest text-gray-400">Administración</span>
+                       <Link to="/dashboard" className="text-lg font-bold text-church-terracotta hover:text-church-terracotta-dark transition-colors flex items-center gap-4">
+                        <span className="w-8 h-8 flex items-center justify-center bg-church-terracotta/10 rounded-lg text-sm">📊</span> Dashboard
+                      </Link>
+                    </div>
+                  )}
+
+                  <button 
+                    onClick={handleLogout}
+                    className="mt-auto text-lg font-bold text-red-500 hover:text-red-700 transition-colors flex items-center gap-4 pt-10"
+                  >
+                    <span className="w-8 h-8 flex items-center justify-center bg-red-50 rounded-lg text-sm">🚪</span> Cerrar Sesión
+                  </button>
+                </>
+              ) : (
+                <div className="pt-10 space-y-4">
+                   <Link to="/login" className="block w-full text-center py-4 rounded-xl font-bold uppercase tracking-widest text-church-olive bg-church-beige hover:bg-church-beige/80 transition-all">Entrar</Link>
+                   <Link to="/register" className="block w-full text-center py-4 rounded-xl font-bold uppercase tracking-widest text-white bg-church-terracotta hover:bg-church-terracotta/90 transition-all shadow-lg">Registro</Link>
+                </div>
+              )}
+            </div>
+          </nav>
         </div>
       </header>
 
