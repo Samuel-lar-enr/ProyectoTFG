@@ -1,53 +1,59 @@
 import os
 import threading
-from flask_mailman import EmailMessage
+import resend
 from flask import current_app
 
-def send_email_task(app, msg, recipient):
+def send_email_task(app, subject, recipient, body, html=None):
     with app.app_context():
         try:
-            print(f"DEBUG: Intentando enviar email a {recipient}...")
-            msg.send()
-            print(f"SUCCESS: Email enviado correctamente a {recipient}")
+            api_key = app.config.get('MAIL_PASSWORD')
+            sender = app.config.get('MAIL_DEFAULT_SENDER')
+            
+            if not api_key or not sender:
+                print("ERROR: Faltan credenciales de Resend (MAIL_PASSWORD o MAIL_DEFAULT_SENDER)")
+                return
+
+            resend.api_key = api_key
+            
+            print(f"DEBUG: Intentando enviar email vía API de Resend a {recipient}...")
+            
+            params = {
+                "from": f"Iglesia TFG <{sender}>",
+                "to": [recipient],
+                "subject": subject,
+                "text": body,
+            }
+            if html:
+                params["html"] = html
+
+            r = resend.Emails.send(params)
+            print(f"SUCCESS: Email enviado vía API. ID: {r.get('id')}")
+            
         except Exception as e:
-            print(f"CRITICAL ERROR enviando email a {recipient}: {str(e)}")
+            print(f"CRITICAL ERROR enviando email vía API a {recipient}: {str(e)}")
             import traceback
             traceback.print_exc()
 
 def send_email(subject, recipient, body, html=None, background=True):
     """
-    Función genérica para enviar correos electrónicos con logging mejorado.
+    Función genérica para enviar correos electrónicos vía API de Resend.
     """
     try:
-        sender = current_app.config.get('MAIL_DEFAULT_SENDER')
-        if not sender:
-            print("ERROR: MAIL_DEFAULT_SENDER no está configurado. El email no se enviará.")
-            return False
-
-        print(f"DEBUG: Preparando email para {recipient} (Remitente: {sender})")
-        
-        msg = EmailMessage(
-            subject,
-            body,
-            sender,
-            [recipient]
-        )
-        if html:
-            msg.content_subtype = "html"
-            msg.body = html
-        
         if background:
-            # Enviar en un hilo separado para no bloquear la respuesta
-            thread = threading.Thread(target=send_email_task, args=(current_app._get_current_object(), msg, recipient))
+            # Enviar en un hilo separado
+            thread = threading.Thread(
+                target=send_email_task, 
+                args=(current_app._get_current_object(), subject, recipient, body, html)
+            )
             thread.start()
-            print(f"DEBUG: Hilo de envío de email iniciado para {recipient}")
+            print(f"DEBUG: Hilo de envío API iniciado para {recipient}")
             return True
         else:
-            msg.send()
-            print(f"SUCCESS: Email enviado (sincrónico) a {recipient}")
+            # Llamada síncrona (podemos reutilizar la lógica o llamar directo)
+            send_email_task(current_app._get_current_object(), subject, recipient, body, html)
             return True
     except Exception as e:
-        print(f"ERROR preparando email para {recipient}: {str(e)}")
+        print(f"ERROR preparando envío API para {recipient}: {str(e)}")
         return False
 
 def send_welcome_email(user_email, username):
