@@ -344,8 +344,18 @@ const OracionesPage: React.FC = () => {
                     <span className="text-sm text-white/30 uppercase tracking-widest font-black">{new Date(viewingOracion.fecha_creacion).toLocaleDateString()}</span>
                   </div>
                 </div>
-                <button className="flex items-center space-x-3 bg-white text-slate-900 px-10 py-5 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-church-terracotta hover:text-white transition-all shadow-2xl">
-                   <span>Amén, me uno</span>
+                <button 
+                  onClick={(e) => handleToggleReminder(e, viewingOracion.id)}
+                  className={`flex items-center space-x-3 px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-2xl ${
+                    userRecordatorios.includes(viewingOracion.id) 
+                      ? 'bg-church-terracotta text-white' 
+                      : 'bg-white text-slate-900 hover:bg-church-terracotta hover:text-white'
+                  }`}
+                >
+                   <svg className="w-5 h-5" fill={userRecordatorios.includes(viewingOracion.id) ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                   </svg>
+                   <span>{userRecordatorios.includes(viewingOracion.id) ? 'Recordando' : 'Recordar'}</span>
                 </button>
               </div>
            </div>

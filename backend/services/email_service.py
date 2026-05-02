@@ -3,22 +3,33 @@ import threading
 from flask_mailman import EmailMessage
 from flask import current_app
 
-def send_email_task(app, msg):
+def send_email_task(app, msg, recipient):
     with app.app_context():
         try:
+            print(f"DEBUG: Intentando enviar email a {recipient}...")
             msg.send()
+            print(f"SUCCESS: Email enviado correctamente a {recipient}")
         except Exception as e:
-            print(f"Error enviando email en segundo plano: {str(e)}")
+            print(f"CRITICAL ERROR enviando email a {recipient}: {str(e)}")
+            import traceback
+            traceback.print_exc()
 
 def send_email(subject, recipient, body, html=None, background=True):
     """
-    Función genérica para enviar correos electrónicos.
+    Función genérica para enviar correos electrónicos con logging mejorado.
     """
     try:
+        sender = current_app.config.get('MAIL_DEFAULT_SENDER')
+        if not sender:
+            print("ERROR: MAIL_DEFAULT_SENDER no está configurado. El email no se enviará.")
+            return False
+
+        print(f"DEBUG: Preparando email para {recipient} (Remitente: {sender})")
+        
         msg = EmailMessage(
             subject,
             body,
-            current_app.config['MAIL_DEFAULT_SENDER'],
+            sender,
             [recipient]
         )
         if html:
@@ -27,14 +38,16 @@ def send_email(subject, recipient, body, html=None, background=True):
         
         if background:
             # Enviar en un hilo separado para no bloquear la respuesta
-            thread = threading.Thread(target=send_email_task, args=(current_app._get_current_object(), msg))
+            thread = threading.Thread(target=send_email_task, args=(current_app._get_current_object(), msg, recipient))
             thread.start()
+            print(f"DEBUG: Hilo de envío de email iniciado para {recipient}")
             return True
         else:
             msg.send()
+            print(f"SUCCESS: Email enviado (sincrónico) a {recipient}")
             return True
     except Exception as e:
-        print(f"Error preparando email: {str(e)}")
+        print(f"ERROR preparando email para {recipient}: {str(e)}")
         return False
 
 def send_welcome_email(user_email, username):
