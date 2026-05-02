@@ -3,7 +3,7 @@
 ## Enlaces
 -web "original": ([https://iglesialavidverdadera.com/](https://iglesialavidverdadera.com/))
 -web "nueva": ([https://proyecto-tfg-seven.vercel.app/](https://proyecto-tfg-seven.vercel.app))
--github: ([https://github.com/Samuel-2004/ProyectoTFG](https://github.com/Samuel-2004/ProyectoTFG))
+-github: ([https://github.com/Samuel-lar-enr/ProyectoTFG](https://github.com/Samuel-lar-enr/ProyectoTFG))
 
 Este documento detalla la arquitectura, funcionalidades y aspectos técnicos del proyecto final de grado.
 
